@@ -1,0 +1,20 @@
+{
+  "name": "pokeledger-mcp",
+  "version": "0.1.0",
+  "description": "PokeLedger MCP server over stdio",
+  "type": "module",
+  "main": "src/index.js",
+  "bin": {
+    "pokeledger-mcp": "src/index.js"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.2"
+  }
+}
