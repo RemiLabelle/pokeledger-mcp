@@ -1,0 +1,10 @@
+{
+  "instructions": "server-instructions.md",
+  "toolDescription": "tool-description.md",
+  "sections": [
+    { "id": "versioning", "title": "Versionnage", "file": "versioning.md" },
+    { "id": "git", "title": "Conventions Git", "file": "git-conventions.md" },
+    { "id": "tdd", "title": "Workflow TDD", "file": "tdd.md" },
+    { "id": "comments", "title": "Commentaires", "file": "comments.md" }
+  ]
+}

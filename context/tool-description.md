@@ -1,0 +1,1 @@
+Return the mandatory workflow rules for coding tasks in this project: versioning cadence, Git conventions, TDD workflow and comment language. Call it before starting any coding task and follow the returned rules for the whole task. Optionally pass `sections` (ids such as "versioning", "git", "tdd", "comments") to fetch only part of the rules.
