@@ -6,6 +6,7 @@
     { "id": "versioning", "title": "Versionnage", "file": "versioning.md" },
     { "id": "git", "title": "Conventions Git", "file": "git-conventions.md" },
     { "id": "tdd", "title": "Workflow TDD", "file": "tdd.md" },
+    { "id": "decisions", "title": "Décisions d'implémentation", "file": "decisions.md" },
     { "id": "comments", "title": "Commentaires", "file": "comments.md" }
   ]
 }
