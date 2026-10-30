@@ -9,12 +9,14 @@
   },
   "scripts": {
     "start": "node src/index.js",
-    "test": "node --test"
+    "test": "node --test",
+    "test:coverage": "node --test --experimental-test-coverage --test-coverage-include=src/** --test-coverage-include=tools/** --test-coverage-exclude=src/index.js --test-coverage-exclude=**/*.test.js --test-coverage-lines=100 --test-coverage-branches=100 --test-coverage-functions=100"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=22.8"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.32.2"
+    "@modelcontextprotocol/sdk": "^1.32.2",
+    "zod": "^4.6.7"
   }
 }
