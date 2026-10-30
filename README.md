@@ -165,6 +165,42 @@ Ou dans un fichier `.mcp.json` :
 }
 ```
 
+## Utilisation avec Codex (OpenAI)
+
+Construire d'abord l'image Docker (voir ci-dessus), puis l'ajouter à Codex :
+
+```bash
+codex mcp add pokeledger -- docker run -i --rm pokeledger-mcp
+```
+
+Ou dans `~/.codex/config.toml` (`.codex/config.toml` pour un projet de
+confiance) ; la CLI Codex, l'extension IDE et l'application de bureau
+partagent cette configuration :
+
+```toml
+[mcp_servers.pokeledger]
+command = "docker"
+args = ["run", "-i", "--rm", "pokeledger-mcp"]
+```
+
+Pour utiliser un dossier de règles personnalisé :
+
+```toml
+[mcp_servers.pokeledger]
+command = "docker"
+args = ["run", "-i", "--rm", "-v", "/chemin/vers/mes-regles:/rules",
+        "-e", "POKELEDGER_START_WORKFLOW_CONTEXT_DIR=/rules", "pokeledger-mcp"]
+```
+
+Les étapes `validate_tests`, `choose_implementation` et
+`confirm_custom_implementation` attendent la réponse de l'opérateur dans un
+formulaire. Codex rejette automatiquement ces formulaires sauf si sa politique
+d'approbation les autorise (`approval_policy.granular.mcp_elicitations`) ;
+sinon, l'étape renvoie `not_validated`, `not_chosen` ou `cancelled` et l'agent
+doit demander la réponse dans la conversation. Si l'opérateur tarde à
+répondre, augmenter `tool_timeout_sec` (60 s par défaut) dans
+`[mcp_servers.pokeledger]`.
+
 ## Structure
 
 L'organisation des fichiers est décrite dans
