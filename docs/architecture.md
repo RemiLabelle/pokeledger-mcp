@@ -125,7 +125,10 @@ l'authentification : les tests des outils s'y connectent directement par
   longueur ni de contenu. Elle refuse d'être créée sans jeton.
 - `createHttpServer({ token, contextDir })` renvoie un `http.Server` non
   démarré. La garde s'applique **avant tout routage** : sans jeton valide, le
-  socket est détruit sans réponse. Ensuite, seul `/mcp` est servi (404 vide
+  socket est détruit sans réponse. Les réponses automatiques de Node sont
+  neutralisées : `clientError` coupe la connexion au lieu d'envoyer 400 ou
+  431, et `checkContinue` n'envoie `100 Continue` qu'à un client
+  authentifié. Ensuite, seul `/mcp` est servi (404 vide
   sinon) ; chaque session a son propre `StreamableHTTPServerTransport` et son
   propre `createServer()`, indexés par `mcp-session-id`. Les sessions avec
   état sont nécessaires à l'élicitation : la réponse de l'opérateur arrive
