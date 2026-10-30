@@ -5,20 +5,22 @@ distribué sous forme d'image **Docker**.
 
 ## Outils
 
-| Outil                  | Description                                                        |
-| ---------------------- | ------------------------------------------------------------------ |
-| `ping`                 | Vérifie que le serveur répond. Renvoie `pong`.                     |
-| `get_workflow_context` | Renvoie les règles de travail obligatoires pour l'agent (ci-dessous). |
+| Outil            | Description                                                            |
+| ---------------- | ---------------------------------------------------------------------- |
+| `ping`           | Vérifie que le serveur répond. Renvoie `pong`.                         |
+| `start_workflow` | Renvoie les règles de travail obligatoires pour l'agent (ci-dessous). |
 
 ## Contexte de travail de l'agent
 
-`get_workflow_context` fournit à l'agent les règles à appliquer pendant toute
-tâche de code : versionnage après chaque unité sémantique, conventions Git,
+`start_workflow` fournit à l'agent les règles à appliquer pendant toute
+tâche de code : versionnage local après chaque unité sémantique (sans
+co-auteur, sans jamais pousser), conventions Git,
 workflow TDD et commentaires en français. Les instructions du serveur lui
 demandent d'appeler cet outil avant de commencer. Le paramètre optionnel
 `sections` (`versioning`, `git`, `tdd`, `comments`) limite la réponse.
 
-Toutes les règles et tous les textes destinés au modèle sont dans `context/`,
+Toutes les règles et tous les textes destinés au modèle sont dans
+`tools/start_workflow/context/`,
 séparés du code :
 
 | Fichier                   | Contenu                                         |
@@ -36,10 +38,11 @@ redémarrage (les instructions et la description de l'outil, elles, sont lues
 au démarrage). Pour ajouter une section, créer le fichier puis le déclarer
 dans `manifest.json`, sans toucher au code.
 
-Pour utiliser un autre dossier de règles, définir `POKELEDGER_CONTEXT_DIR` :
+Pour utiliser un autre dossier de règles, définir
+`POKELEDGER_START_WORKFLOW_CONTEXT_DIR` :
 
 ```bash
-docker run -i --rm -v "$PWD/mes-regles:/rules" -e POKELEDGER_CONTEXT_DIR=/rules pokeledger-mcp
+docker run -i --rm -v "$PWD/mes-regles:/rules" -e POKELEDGER_START_WORKFLOW_CONTEXT_DIR=/rules pokeledger-mcp
 ```
 
 ## Développement local
@@ -93,9 +96,13 @@ Ou dans un fichier `.mcp.json` :
 ## Structure
 
 ```text
-src/server.js   création du serveur et déclaration des outils
-src/context.js  chargement des fichiers de contexte
-src/index.js    point d'entrée stdio
-context/        règles et textes destinés au modèle (paramétrage)
-test/           tests (test/fixtures : dossiers de contexte de test)
+src/index.js                  point d'entrée stdio
+src/server.js                 création du serveur, enregistrement des outils
+tools/<outil>/                un dossier par outil
+  index.js                    déclaration de l'outil
+  *.test.js ou test/          tests de l'outil
+tools/start_workflow/
+  context.js                  chargement des fichiers de contexte
+  context/                    règles et textes destinés au modèle
+  test/fixtures/              dossiers de contexte de test
 ```
