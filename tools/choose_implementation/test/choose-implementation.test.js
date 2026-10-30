@@ -6,7 +6,7 @@ import { ElicitRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 import { createServer } from "../../../src/server.js";
 import { loadTexts, renderTemplate } from "../texts.js";
 
-const TOOL = "choose_implementation";
+const STEP = "choose_implementation";
 const texts = loadTexts();
 const OPTIONS = [
   {
@@ -45,23 +45,28 @@ async function connect(reply) {
   await Promise.all([server.connect(serverTransport), client.connect(clientTransport)]);
 }
 
+// Exécute l'étape interne en passant par l'outil public start_workflow.
+function runStep(input) {
+  return client.callTool({ name: "start_workflow", arguments: { step: STEP, input } });
+}
+
 afterEach(async () => {
   await client?.close();
   client = undefined;
 });
 
-test("tool is listed with the description from its context files", async () => {
+test("the step is not a public tool but is documented by start_workflow", async () => {
   await connect({ action: "cancel" });
   const { tools } = await client.listTools();
-  const tool = tools.find((t) => t.name === TOOL);
-  assert.ok(tool);
-  assert.equal(tool.description, texts.toolDescription);
-  assert.deepEqual(tool.inputSchema.required.sort(), ["context", "decision", "options"]);
+  assert.equal(tools.some((t) => t.name === STEP), false);
+  const startWorkflow = tools.find((t) => t.name === "start_workflow");
+  assert.ok(startWorkflow.inputSchema.properties.step.enum.includes(STEP));
+  assert.ok(startWorkflow.inputSchema.properties.step.description.includes(texts.toolDescription));
 });
 
 test("the operator receives the decision, its context and every numbered option with its snippet", async () => {
   await connect({ action: "cancel" });
-  await client.callTool({ name: TOOL, arguments: ARGS });
+  await runStep(ARGS);
   assert.equal(elicitations.length, 1);
   const options = OPTIONS.map((option, index) =>
     renderTemplate(texts.option, { number: String(index + 1), ...option }),
@@ -74,7 +79,7 @@ test("the operator receives the decision, its context and every numbered option 
 
 test("the operator form offers each option plus a custom implementation", async () => {
   await connect({ action: "cancel" });
-  await client.callTool({ name: TOOL, arguments: ARGS });
+  await runStep(ARGS);
   const schema = elicitations[0].requestedSchema;
   assert.deepEqual(schema.required, ["choice"]);
   assert.deepEqual(schema.properties.choice.enum, ["1", "2", "custom"]);
@@ -88,7 +93,7 @@ test("the operator form offers each option plus a custom implementation", async 
 
 test("choosing an option tells the agent to implement it", async () => {
   await connect({ action: "accept", content: { choice: "2" } });
-  const result = await client.callTool({ name: TOOL, arguments: ARGS });
+  const result = await runStep(ARGS);
   assert.equal(result.structuredContent.status, "chosen");
   assert.equal(result.structuredContent.choice, "2");
   assert.equal(result.structuredContent.title, "Switch statement");
@@ -100,14 +105,14 @@ test("choosing an option tells the agent to implement it", async () => {
 
 test("a chosen option wins over text typed in the custom field", async () => {
   await connect({ action: "accept", content: { choice: "1", custom: "Use a class hierarchy" } });
-  const result = await client.callTool({ name: TOOL, arguments: ARGS });
+  const result = await runStep(ARGS);
   assert.equal(result.structuredContent.status, "chosen");
   assert.equal(result.structuredContent.title, "Map lookup");
 });
 
 test("a custom implementation is returned for the agent to assess", async () => {
   await connect({ action: "accept", content: { choice: "custom", custom: "Use an event emitter" } });
-  const result = await client.callTool({ name: TOOL, arguments: ARGS });
+  const result = await runStep(ARGS);
   assert.equal(result.structuredContent.status, "custom");
   assert.equal(result.structuredContent.custom, "Use an event emitter");
   assert.equal(result.content[0].text, renderTemplate(texts.custom, { custom: "Use an event emitter" }));
@@ -116,7 +121,7 @@ test("a custom implementation is returned for the agent to assess", async () => 
 for (const content of [{ choice: "custom" }, { choice: "custom", custom: "   " }]) {
   test(`a custom choice without a description is incomplete (${JSON.stringify(content.custom)})`, async () => {
     await connect({ action: "accept", content });
-    const result = await client.callTool({ name: TOOL, arguments: ARGS });
+    const result = await runStep(ARGS);
     assert.equal(result.structuredContent.status, "incomplete");
     assert.equal(result.content[0].text, texts.incomplete);
   });
@@ -125,7 +130,7 @@ for (const content of [{ choice: "custom" }, { choice: "custom", custom: "   " }
 for (const action of ["decline", "cancel"]) {
   test(`a ${action} response is not a choice`, async () => {
     await connect({ action });
-    const result = await client.callTool({ name: TOOL, arguments: ARGS });
+    const result = await runStep(ARGS);
     assert.equal(result.structuredContent.status, "not_chosen");
     assert.equal(result.content[0].text, renderTemplate(texts.notChosen, { action }));
   });
@@ -133,7 +138,7 @@ for (const action of ["decline", "cancel"]) {
 
 test("without elicitation support the agent must ask in the conversation", async () => {
   await connect(null);
-  const result = await client.callTool({ name: TOOL, arguments: ARGS });
+  const result = await runStep(ARGS);
   assert.equal(result.structuredContent.status, "unavailable");
   assert.ok(result.structuredContent.reason.length > 0);
   assert.equal(
@@ -144,7 +149,7 @@ test("without elicitation support the agent must ask in the conversation", async
 
 test("a call without any option is rejected", async () => {
   await connect({ action: "cancel" });
-  const result = await client.callTool({ name: TOOL, arguments: { ...ARGS, options: [] } });
+  const result = await runStep({ ...ARGS, options: [] });
   assert.equal(result.isError, true);
   assert.equal(elicitations.length, 0);
 });
@@ -152,7 +157,7 @@ test("a call without any option is rejected", async () => {
 test("an option without a code snippet is rejected", async () => {
   await connect({ action: "cancel" });
   const { snippet, ...withoutSnippet } = OPTIONS[0];
-  const result = await client.callTool({ name: TOOL, arguments: { ...ARGS, options: [withoutSnippet] } });
+  const result = await runStep({ ...ARGS, options: [withoutSnippet] });
   assert.equal(result.isError, true);
   assert.equal(elicitations.length, 0);
 });

@@ -6,7 +6,7 @@ import { ElicitRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 import { createServer } from "../../../src/server.js";
 import { loadTexts, renderTemplate } from "../texts.js";
 
-const TOOL = "validate_tests";
+const STEP = "validate_tests";
 const texts = loadTexts();
 const ARGS = {
   task: "Add a login form",
@@ -34,23 +34,28 @@ async function connect(reply) {
   await Promise.all([server.connect(serverTransport), client.connect(clientTransport)]);
 }
 
+// Exécute l'étape interne en passant par l'outil public start_workflow.
+function runStep(input) {
+  return client.callTool({ name: "start_workflow", arguments: { step: STEP, input } });
+}
+
 afterEach(async () => {
   await client?.close();
   client = undefined;
 });
 
-test("tool is listed with the description from its context files", async () => {
+test("the step is not a public tool but is documented by start_workflow", async () => {
   await connect({ action: "cancel" });
   const { tools } = await client.listTools();
-  const tool = tools.find((t) => t.name === TOOL);
-  assert.ok(tool);
-  assert.equal(tool.description, texts.toolDescription);
-  assert.deepEqual(tool.inputSchema.required.sort(), ["cases", "scope", "task"]);
+  assert.equal(tools.some((t) => t.name === STEP), false);
+  const startWorkflow = tools.find((t) => t.name === "start_workflow");
+  assert.ok(startWorkflow.inputSchema.properties.step.enum.includes(STEP));
+  assert.ok(startWorkflow.inputSchema.properties.step.description.includes(texts.toolDescription));
 });
 
 test("the operator receives the task, scope, cases and test files", async () => {
   await connect({ action: "cancel" });
-  await client.callTool({ name: TOOL, arguments: ARGS });
+  await runStep(ARGS);
   assert.equal(elicitations.length, 1);
   assert.equal(
     elicitations[0].message,
@@ -66,13 +71,13 @@ test("the operator receives the task, scope, cases and test files", async () => 
 test("missing test files are announced as unspecified", async () => {
   await connect({ action: "cancel" });
   const { testFiles, ...args } = ARGS;
-  await client.callTool({ name: TOOL, arguments: args });
+  await runStep(args);
   assert.ok(elicitations[0].message.includes(texts.strings.noTestFiles));
 });
 
 test("the operator form asks for a decision and optional feedback", async () => {
   await connect({ action: "cancel" });
-  await client.callTool({ name: TOOL, arguments: ARGS });
+  await runStep(ARGS);
   const schema = elicitations[0].requestedSchema;
   assert.deepEqual(schema.required, ["decision"]);
   assert.deepEqual(schema.properties.decision.enum, ["validate", "rework"]);
@@ -85,7 +90,7 @@ test("the operator form asks for a decision and optional feedback", async () => 
 
 test("a validation lets development start", async () => {
   await connect({ action: "accept", content: { decision: "validate" } });
-  const result = await client.callTool({ name: TOOL, arguments: ARGS });
+  const result = await runStep(ARGS);
   assert.equal(result.structuredContent.status, "validated");
   assert.equal(
     result.content[0].text,
@@ -95,7 +100,7 @@ test("a validation lets development start", async () => {
 
 test("remarks given with a validation are passed on", async () => {
   await connect({ action: "accept", content: { decision: "validate", feedback: "Nice coverage" } });
-  const result = await client.callTool({ name: TOOL, arguments: ARGS });
+  const result = await runStep(ARGS);
   assert.equal(result.structuredContent.status, "validated");
   assert.equal(result.structuredContent.feedback, "Nice coverage");
   assert.equal(result.content[0].text, renderTemplate(texts.validated, { feedback: "Nice coverage" }));
@@ -103,7 +108,7 @@ test("remarks given with a validation are passed on", async () => {
 
 test("a rework request returns the operator's feedback", async () => {
   await connect({ action: "accept", content: { decision: "rework", feedback: "Add a locked account case" } });
-  const result = await client.callTool({ name: TOOL, arguments: ARGS });
+  const result = await runStep(ARGS);
   assert.equal(result.structuredContent.status, "rework");
   assert.equal(result.structuredContent.feedback, "Add a locked account case");
   assert.equal(
@@ -114,7 +119,7 @@ test("a rework request returns the operator's feedback", async () => {
 
 test("a rework request without feedback tells the agent to ask for details", async () => {
   await connect({ action: "accept", content: { decision: "rework", feedback: "" } });
-  const result = await client.callTool({ name: TOOL, arguments: ARGS });
+  const result = await runStep(ARGS);
   assert.equal(result.structuredContent.status, "rework");
   assert.equal(
     result.content[0].text,
@@ -125,7 +130,7 @@ test("a rework request without feedback tells the agent to ask for details", asy
 for (const action of ["decline", "cancel"]) {
   test(`a ${action} response is not a validation`, async () => {
     await connect({ action });
-    const result = await client.callTool({ name: TOOL, arguments: ARGS });
+    const result = await runStep(ARGS);
     assert.equal(result.structuredContent.status, "not_validated");
     assert.equal(result.content[0].text, renderTemplate(texts.notValidated, { action }));
   });
@@ -133,7 +138,7 @@ for (const action of ["decline", "cancel"]) {
 
 test("without elicitation support the agent must ask in the conversation", async () => {
   await connect(null);
-  const result = await client.callTool({ name: TOOL, arguments: ARGS });
+  const result = await runStep(ARGS);
   assert.equal(result.structuredContent.status, "unavailable");
   assert.ok(result.structuredContent.reason.length > 0);
   assert.equal(
@@ -144,7 +149,7 @@ test("without elicitation support the agent must ask in the conversation", async
 
 test("a call without any covered case is rejected", async () => {
   await connect({ action: "cancel" });
-  const result = await client.callTool({ name: TOOL, arguments: { ...ARGS, cases: [] } });
+  const result = await runStep({ ...ARGS, cases: [] });
   assert.equal(result.isError, true);
   assert.equal(elicitations.length, 0);
 });
