@@ -1,0 +1,10 @@
+{
+  "decisionTitle": "Décision",
+  "decisionValidate": "Valider les tests",
+  "decisionRework": "Retravailler les tests",
+  "feedbackTitle": "Retours",
+  "feedbackDescription": "Ce qui doit être retravaillé dans les tests (cas manquants, cas inutiles, portée à corriger…).",
+  "noFeedback": "(aucune)",
+  "noReworkFeedback": "(aucun détail fourni : demandez à l'opérateur ce qui doit être retravaillé)",
+  "noTestFiles": "(non précisés)"
+}
