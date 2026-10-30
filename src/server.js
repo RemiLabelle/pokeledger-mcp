@@ -3,6 +3,7 @@ import { registerPing } from "../tools/ping/index.js";
 import { registerStartWorkflow } from "../tools/start_workflow/index.js";
 import { registerValidateTests } from "../tools/validate_tests/index.js";
 import { registerChooseImplementation } from "../tools/choose_implementation/index.js";
+import { registerConfirmCustomImplementation } from "../tools/confirm_custom_implementation/index.js";
 import { loadServerTexts, resolveContextDir } from "../tools/start_workflow/context.js";
 
 // Crée le serveur MCP et déclare ses outils ; contextDir pointe vers les fichiers de règles.
@@ -14,6 +15,7 @@ export function createServer({ contextDir = resolveContextDir() } = {}) {
   registerStartWorkflow(server, contextDir);
   registerValidateTests(server);
   registerChooseImplementation(server);
+  registerConfirmCustomImplementation(server);
 
   return server;
 }
