@@ -11,6 +11,7 @@ const TEMPLATE_FILES = {
   rework: "rework.md",
   notValidated: "not-validated.md",
   unavailable: "unavailable.md",
+  developmentSkill: "development-skill.md",
 };
 
 // Charge les gabarits de messages et les libellés du formulaire depuis le dossier de textes.

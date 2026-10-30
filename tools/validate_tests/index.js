@@ -61,11 +61,14 @@ export const validateTests = {
 
     const { decision, feedback = "" } = answer.content;
     if (decision === "validate") {
-      return reply(
+      const result = reply(
         texts.validated,
         { feedback: feedback || texts.strings.noFeedback },
         { status: "validated", feedback },
       );
+      // Le skill de développement suit la validation pour guider l'agent pendant le développement.
+      result.content.push({ type: "text", text: texts.developmentSkill });
+      return result;
     }
     return reply(texts.rework, { feedback: feedback || texts.strings.noReworkFeedback }, { status: "rework", feedback });
   },
