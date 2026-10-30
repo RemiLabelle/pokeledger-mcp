@@ -1,17 +1,15 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { registerPing } from "../tools/ping/index.js";
+import { registerStartWorkflow } from "../tools/start_workflow/index.js";
+import { loadServerTexts, resolveContextDir } from "../tools/start_workflow/context.js";
 
-export function createServer() {
-  const server = new McpServer({ name: "pokeledger-mcp", version: "0.1.0" });
+// Crée le serveur MCP et déclare ses seuls outils publics ; contextDir pointe vers les fichiers de règles.
+export function createServer({ contextDir = resolveContextDir() } = {}) {
+  const { instructions } = loadServerTexts(contextDir);
+  const server = new McpServer({ name: "pokeledger-mcp", version: "0.1.0" }, { instructions });
 
-  server.registerTool(
-    "ping",
-    {
-      title: "Ping",
-      description: "Check that the PokeLedger server is reachable. Returns \"pong\".",
-      annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
-    },
-    async () => ({ content: [{ type: "text", text: "pong" }] }),
-  );
+  registerPing(server);
+  registerStartWorkflow(server, contextDir);
 
   return server;
 }

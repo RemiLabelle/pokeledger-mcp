@@ -1,0 +1,6 @@
+{{number}}. {{title}}
+{{rationale}}
+
+```
+{{snippet}}
+```

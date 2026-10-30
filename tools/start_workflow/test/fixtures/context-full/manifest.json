@@ -1,0 +1,8 @@
+{
+  "instructions": "instructions.md",
+  "toolDescription": "tool.md",
+  "sections": [
+    { "id": "alpha", "title": "Alpha", "file": "alpha.md" },
+    { "id": "beta", "title": "Beta", "file": "beta.md" }
+  ]
+}
