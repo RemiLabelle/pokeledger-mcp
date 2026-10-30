@@ -5,10 +5,10 @@
    exigences fonctionnelles : un comportement non testé NE DOIT PAS être
    implémenté.
 2. **Validation par l'opérateur.** Une fois les tests écrits, l'agent DOIT
-   appeler l'outil `validate_tests` avec la tâche, la portée et la liste des
-   cas couverts, puis DOIT agir selon le `status` renvoyé :
+   appeler `start_workflow` avec `step: "validate_tests"` et, dans `input`,
+   la tâche, la portée et la liste des cas couverts, puis DOIT agir selon le `status` renvoyé :
    - `rework` : l'agent DOIT retravailler les tests selon les retours de
-     l'opérateur, puis DOIT rappeler `validate_tests`, jusqu'à la validation.
+     l'opérateur, puis DOIT relancer l'étape `validate_tests`, jusqu'à la validation.
    - `not_validated` ou `unavailable` : l'agent NE DOIT PAS commencer le
      développement ; il DOIT demander à l'opérateur, dans la conversation,
      une validation explicite ou ses retours.

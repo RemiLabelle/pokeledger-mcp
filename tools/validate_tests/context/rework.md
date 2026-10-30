@@ -4,5 +4,5 @@ le développement.
 Retours de l'opérateur :
 {{feedback}}
 
-L'agent DOIT modifier les tests selon ces retours, puis DOIT rappeler
-`validate_tests` avec le résumé mis à jour.
+L'agent DOIT modifier les tests selon ces retours, puis DOIT relancer
+l'étape `validate_tests` avec le résumé mis à jour.
