@@ -5,11 +5,13 @@ distribué sous forme d'image **Docker**.
 
 ## Outils
 
-| Outil            | Description                                                            |
-| ---------------- | ---------------------------------------------------------------------- |
-| `ping`           | Vérifie que le serveur répond. Renvoie `pong`.                         |
-| `start_workflow` | Renvoie les règles de travail obligatoires pour l'agent (ci-dessous). |
-| `validate_tests` | Demande à l'opérateur de valider les tests avant le développement.    |
+| Outil                           | Description                                                              |
+| ------------------------------- | ------------------------------------------------------------------------ |
+| `ping`                          | Vérifie que le serveur répond. Renvoie `pong`.                           |
+| `start_workflow`                | Renvoie les règles de travail obligatoires pour l'agent (ci-dessous).    |
+| `validate_tests`                | Demande à l'opérateur de valider les tests avant le développement.       |
+| `choose_implementation`         | Fait choisir à l'opérateur l'implémentation d'une logique non établie.   |
+| `confirm_custom_implementation` | Fait confirmer une implémentation personnalisée problématique.           |
 
 ## Contexte de travail de l'agent
 
@@ -72,6 +74,28 @@ Les messages et libellés du formulaire sont dans
 `tools/validate_tests/context/` (gabarits `{{clé}}` et `strings.json`) et sont
 relus à chaque appel.
 
+## Décisions d'implémentation
+
+Pendant le développement, l'agent implémente directement ce qui est établi.
+Dès qu'il doit interpréter ou inventer une pièce de logique centrale, il appelle
+`choose_implementation` avec des options éprouvées, alignées sur le code
+existant, chacune accompagnée d'un court extrait de code. L'opérateur choisit
+une option ou décrit sa propre implémentation :
+
+| `status`      | Consigne pour l'agent                                                   |
+| ------------- | ----------------------------------------------------------------------- |
+| `chosen`      | Implémenter l'option choisie                                            |
+| `custom`      | Vérifier l'alignement ; sans problème, l'implémenter telle quelle       |
+| `incomplete`  | Implémentation personnalisée vide : rappeler l'outil                    |
+| `not_chosen`  | L'opérateur a refusé ou fermé le formulaire : demander dans le chat     |
+| `unavailable` | Client sans élicitation : présenter les options dans le chat            |
+
+Si l'implémentation personnalisée pose des problèmes (désalignement, mauvaise
+odeur de code, anti-patron), l'agent appelle `confirm_custom_implementation`
+avec la liste des problèmes. `proceed` : l'agent l'implémente telle quelle,
+sans la réévaluer. `cancelled` (y compris formulaire fermé) : l'agent rappelle
+`choose_implementation` avec les mêmes options.
+
 ## Développement local
 
 Prérequis : Node.js 22.8 ou plus.
@@ -132,7 +156,9 @@ tools/start_workflow/
   context.js                  chargement des fichiers de contexte
   context/                    règles et textes destinés au modèle
   test/fixtures/              dossiers de contexte de test
-tools/validate_tests/
+tools/validate_tests/,
+tools/choose_implementation/,
+tools/confirm_custom_implementation/
   texts.js                    chargement et rendu des gabarits
   context/                    messages à l'opérateur et à l'agent
 ```
