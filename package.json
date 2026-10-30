@@ -9,8 +9,9 @@
   },
   "scripts": {
     "start": "node src/index.js",
+    "activate": "node src/activate/cli.js",
     "test": "node --test",
-    "test:coverage": "node --test --experimental-test-coverage --test-coverage-include=src/** --test-coverage-include=tools/** --test-coverage-exclude=src/index.js --test-coverage-exclude=**/*.test.js --test-coverage-lines=100 --test-coverage-branches=100 --test-coverage-functions=100"
+    "test:coverage": "node --test --experimental-test-coverage --test-coverage-include=src/** --test-coverage-include=tools/** --test-coverage-exclude=src/index.js --test-coverage-exclude=src/activate/cli.js --test-coverage-exclude=**/*.test.js --test-coverage-lines=100 --test-coverage-branches=100 --test-coverage-functions=100"
   },
   "engines": {
     "node": ">=22.8"
