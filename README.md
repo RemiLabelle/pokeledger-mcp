@@ -5,13 +5,28 @@ distribué sous forme d'image **Docker**.
 
 ## Outils
 
-| Outil                           | Description                                                              |
-| ------------------------------- | ------------------------------------------------------------------------ |
-| `ping`                          | Vérifie que le serveur répond. Renvoie `pong`.                           |
-| `start_workflow`                | Renvoie les règles de travail obligatoires pour l'agent (ci-dessous).    |
-| `validate_tests`                | Demande à l'opérateur de valider les tests avant le développement.       |
-| `choose_implementation`         | Fait choisir à l'opérateur l'implémentation d'une logique non établie.   |
-| `confirm_custom_implementation` | Fait confirmer une implémentation personnalisée problématique.           |
+Seuls deux outils sont publics :
+
+| Outil            | Description                                                                         |
+| ---------------- | ----------------------------------------------------------------------------------- |
+| `ping`           | Vérifie que le serveur répond. Renvoie `pong`.                                      |
+| `start_workflow` | Renvoie les règles de travail de l'agent (ci-dessous) et exécute les étapes internes. |
+
+Les étapes internes ne sont pas listées comme outils ; l'agent les lance par
+`start_workflow` avec `step` et `input` :
+
+| `step`                          | Rôle                                                                   |
+| ------------------------------- | ---------------------------------------------------------------------- |
+| `validate_tests`                | Demande à l'opérateur de valider les tests avant le développement.     |
+| `choose_implementation`         | Fait choisir à l'opérateur l'implémentation d'une logique non établie. |
+| `confirm_custom_implementation` | Fait confirmer une implémentation personnalisée problématique.         |
+
+```json
+{ "step": "validate_tests", "input": { "task": "…", "scope": "…", "cases": ["…"] } }
+```
+
+Une étape inconnue ou un `input` invalide renvoie une erreur sans solliciter
+l'opérateur. La description du paramètre `step` documente chaque étape.
 
 ## Contexte de travail de l'agent
 
@@ -58,16 +73,16 @@ docker run -i --rm -v "$PWD/mes-regles:/rules" -e POKELEDGER_START_WORKFLOW_CONT
 
 ## Validation des tests par l'opérateur
 
-Une fois les tests d'une tâche écrits, l'agent appelle `validate_tests` avec la
+Une fois les tests d'une tâche écrits, l'agent lance l'étape `validate_tests` avec la
 tâche, la portée et la liste des cas couverts. Le serveur présente ce résumé à
 l'opérateur par une **élicitation MCP** (formulaire natif du client) :
 l'opérateur valide les tests ou demande une reprise en précisant ce qui doit
-changer. L'outil renvoie un `status` :
+changer. L'étape renvoie un `status` :
 
 | `status`        | Consigne pour l'agent                                          |
 | --------------- | -------------------------------------------------------------- |
 | `validated`     | Committer les tests puis commencer le développement            |
-| `rework`        | Retravailler les tests selon `feedback`, puis rappeler l'outil |
+| `rework`        | Retravailler les tests selon `feedback`, puis relancer l'étape |
 | `not_validated` | L'opérateur a refusé ou annulé : ne pas développer             |
 | `unavailable`   | Client sans élicitation : demander la validation dans le chat  |
 
@@ -78,8 +93,8 @@ relus à chaque appel.
 ## Décisions d'implémentation
 
 Pendant le développement, l'agent implémente directement ce qui est établi.
-Dès qu'il doit interpréter ou inventer une pièce de logique centrale, il appelle
-`choose_implementation` avec des options éprouvées, alignées sur le code
+Dès qu'il doit interpréter ou inventer une pièce de logique centrale, il lance
+l'étape `choose_implementation` avec des options éprouvées, alignées sur le code
 existant, chacune accompagnée d'un court extrait de code. L'opérateur choisit
 une option ou décrit sa propre implémentation :
 
@@ -87,14 +102,14 @@ une option ou décrit sa propre implémentation :
 | ------------- | ----------------------------------------------------------------------- |
 | `chosen`      | Implémenter l'option choisie                                            |
 | `custom`      | Vérifier l'alignement ; sans problème, l'implémenter telle quelle       |
-| `incomplete`  | Implémentation personnalisée vide : rappeler l'outil                    |
+| `incomplete`  | Implémentation personnalisée vide : relancer l'étape                   |
 | `not_chosen`  | L'opérateur a refusé ou fermé le formulaire : demander dans le chat     |
 | `unavailable` | Client sans élicitation : présenter les options dans le chat            |
 
 Si l'implémentation personnalisée pose des problèmes (désalignement, mauvaise
-odeur de code, anti-patron), l'agent appelle `confirm_custom_implementation`
+odeur de code, anti-patron), l'agent lance l'étape `confirm_custom_implementation`
 avec la liste des problèmes. `proceed` : l'agent l'implémente telle quelle,
-sans la réévaluer. `cancelled` (y compris formulaire fermé) : l'agent rappelle
+sans la réévaluer. `cancelled` (y compris formulaire fermé) : l'agent relance
 `choose_implementation` avec les mêmes options.
 
 ## Développement local
@@ -149,11 +164,12 @@ Ou dans un fichier `.mcp.json` :
 
 ```text
 src/index.js                  point d'entrée stdio
-src/server.js                 création du serveur, enregistrement des outils
-tools/<outil>/                un dossier par outil
-  index.js                    déclaration de l'outil
+src/server.js                 création du serveur, enregistrement des outils publics
+tools/<outil>/                un dossier par outil ou étape interne
+  index.js                    déclaration de l'outil ou de l'étape
   *.test.js ou test/          tests de l'outil
 tools/start_workflow/
+  index.js                    outil public et routage des étapes (`step`)
   context.js                  chargement des fichiers de contexte
   context/                    règles et textes destinés au modèle
   test/fixtures/              dossiers de contexte de test
