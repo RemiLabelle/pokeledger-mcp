@@ -22,7 +22,8 @@ export function createHttpServer({ token, contextDir } = {}) {
   const isAuthorized = createBearerGuard(token);
   const sessions = new Map();
 
-  return http.createServer(async (req, res) => {
+  // Traite une requête complète : coupure silencieuse sans jeton valide, puis routage vers la session MCP.
+  async function handleRequest(req, res) {
     // Aucun octet n'est renvoyé sans jeton valide : le client ne peut pas savoir qu'un serveur MCP écoute.
     if (!isAuthorized(req.headers.authorization)) {
       req.socket.destroy();
@@ -34,5 +35,15 @@ export function createHttpServer({ token, contextDir } = {}) {
     }
     const transport = sessions.get(req.headers["mcp-session-id"]) ?? (await openSession(sessions, contextDir));
     await transport.handleRequest(req, res);
+  }
+
+  const server = http.createServer(handleRequest);
+  // Node enverrait sinon « 100 Continue » avant toute vérification ; seul un client authentifié le reçoit.
+  server.on("checkContinue", (req, res) => {
+    if (isAuthorized(req.headers.authorization)) res.writeContinue();
+    return handleRequest(req, res);
   });
+  // Node répondrait sinon 400 ou 431 aux requêtes illisibles, trahissant un serveur HTTP : la connexion est coupée.
+  server.on("clientError", (_error, socket) => socket.destroy());
+  return server;
 }
