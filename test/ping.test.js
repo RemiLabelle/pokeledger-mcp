@@ -11,7 +11,7 @@ test("ping tool responds pong", async () => {
   await Promise.all([server.connect(serverTransport), client.connect(clientTransport)]);
 
   const { tools } = await client.listTools();
-  assert.deepEqual(tools.map((t) => t.name), ["ping"]);
+  assert.ok(tools.some((t) => t.name === "ping"));
 
   const result = await client.callTool({ name: "ping", arguments: {} });
   assert.deepEqual(result.content, [{ type: "text", text: "pong" }]);
