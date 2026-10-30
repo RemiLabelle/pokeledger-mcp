@@ -11,7 +11,7 @@ import { DEFAULT_CONTEXT_DIR, buildContext, loadServerTexts } from "../context.j
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURE = path.join(here, "fixtures", "context-full");
-const TOOL = "get_workflow_context";
+const TOOL = "start_workflow";
 
 let client;
 
@@ -24,7 +24,7 @@ async function connect(options) {
 }
 
 afterEach(async () => {
-  delete process.env.POKELEDGER_CONTEXT_DIR;
+  delete process.env.POKELEDGER_START_WORKFLOW_CONTEXT_DIR;
   await client?.close();
   client = undefined;
 });
@@ -79,8 +79,8 @@ test("without options the server uses the shipped context", async () => {
   assert.equal(tool.description, loadServerTexts(DEFAULT_CONTEXT_DIR).toolDescription);
 });
 
-test("POKELEDGER_CONTEXT_DIR selects the context folder", async () => {
-  process.env.POKELEDGER_CONTEXT_DIR = FIXTURE;
+test("POKELEDGER_START_WORKFLOW_CONTEXT_DIR selects the context folder", async () => {
+  process.env.POKELEDGER_START_WORKFLOW_CONTEXT_DIR = FIXTURE;
   await connect();
   const result = await client.callTool({ name: TOOL, arguments: {} });
   assert.equal(result.content[0].text, buildContext(FIXTURE));

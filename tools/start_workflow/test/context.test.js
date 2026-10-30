@@ -20,14 +20,14 @@ test("default context dir is the repository context folder", () => {
   assert.equal(DEFAULT_CONTEXT_DIR, path.resolve(here, "..", "context"));
 });
 
-test("POKELEDGER_CONTEXT_DIR overrides the context dir", () => {
+test("POKELEDGER_START_WORKFLOW_CONTEXT_DIR overrides the context dir", () => {
   const dir = fixture("context-full");
-  assert.equal(resolveContextDir({ POKELEDGER_CONTEXT_DIR: dir }), path.resolve(dir));
+  assert.equal(resolveContextDir({ POKELEDGER_START_WORKFLOW_CONTEXT_DIR: dir }), path.resolve(dir));
 });
 
 test("context dir falls back to the default when the variable is unset or empty", () => {
   assert.equal(resolveContextDir({}), DEFAULT_CONTEXT_DIR);
-  assert.equal(resolveContextDir({ POKELEDGER_CONTEXT_DIR: "" }), DEFAULT_CONTEXT_DIR);
+  assert.equal(resolveContextDir({ POKELEDGER_START_WORKFLOW_CONTEXT_DIR: "" }), DEFAULT_CONTEXT_DIR);
 });
 
 test("manifest lists sections in declared order", () => {
