@@ -1,7 +1,7 @@
 {
   "name": "pokeledger-mcp",
   "version": "0.1.0",
-  "description": "PokeLedger MCP server over stdio",
+  "description": "PokeLedger MCP server over Streamable HTTP with bearer authentication",
   "type": "module",
   "main": "src/index.js",
   "bin": {

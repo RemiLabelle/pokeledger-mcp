@@ -3,8 +3,11 @@
 ## Structure
 
 ```text
-src/index.js                  point d'entrée stdio
+src/index.js                  point d'entrée HTTP (lit PL_MCP_TOKEN)
+src/http.js                   serveur HTTP, sessions MCP, coupure des requêtes non authentifiées
+src/auth.js                   garde bearer (comparaison en temps constant)
 src/server.js                 création du serveur, enregistrement des outils publics
+test/                         tests de src/
 tools/<outil>/                un dossier par outil ou étape interne
   index.js                    déclaration de l'outil ou de l'étape
   *.test.js ou test/          tests de l'outil
@@ -22,7 +25,7 @@ tools/confirm_custom_implementation/
 
 ## Du code à l'exposition publique
 
-Le code d'un outil traverse cinq couches, de la plus basse à la plus haute.
+Le code d'un outil traverse sept couches, de la plus basse à la plus haute.
 Chaque couche ne connaît que celle du dessous.
 
 ```text
@@ -34,7 +37,11 @@ tools/<étape>/index.js          3. logique de l'étape (objet step)
         │  routé par
 tools/start_workflow/index.js   4. outil public (registerTool)
         │  enregistré par
-src/server.js → src/index.js    5. serveur MCP et transport stdio
+src/server.js                   5. serveur MCP
+        │  une instance par session, derrière
+src/auth.js → src/http.js       6. garde bearer et transport Streamable HTTP
+        │  démarré par
+src/index.js                    7. point d'entrée (PL_MCP_TOKEN)
 ```
 
 ### 1. Textes paramétrables — `tools/<outil>/context/`
@@ -102,14 +109,34 @@ MCP, avec `ping` :
 Une étape n'est donc jamais listée comme outil : elle n'est atteignable que
 par `start_workflow`.
 
-### 5. Serveur et transport — `src/server.js` et `src/index.js`
+### 5. Serveur MCP — `src/server.js`
 
-- `createServer` crée le `McpServer` avec les instructions issues du contexte
-  et enregistre uniquement les outils publics (`registerPing`,
-  `registerStartWorkflow`). C'est le point d'entrée des tests, qui s'y
-  connectent par `InMemoryTransport`.
-- `src/index.js` relie ce serveur au transport stdio ; l'image Docker lance
-  ce fichier. Les clients MCP voient alors `ping` et `start_workflow`.
+`createServer` crée le `McpServer` avec les instructions issues du contexte
+et enregistre uniquement les outils publics (`registerPing`,
+`registerStartWorkflow`). Il ignore tout du transport et de
+l'authentification : les tests des outils s'y connectent directement par
+`InMemoryTransport`.
+
+### 6. Authentification et transport — `src/auth.js` et `src/http.js`
+
+- `createBearerGuard(token)` renvoie la garde `(authorization) => boolean` :
+  format strict `Bearer <jeton>` (schéma insensible à la casse), comparaison
+  par `timingSafeEqual` sur les empreintes SHA-256, donc sans fuite de
+  longueur ni de contenu. Elle refuse d'être créée sans jeton.
+- `createHttpServer({ token, contextDir })` renvoie un `http.Server` non
+  démarré. La garde s'applique **avant tout routage** : sans jeton valide, le
+  socket est détruit sans réponse. Ensuite, seul `/mcp` est servi (404 vide
+  sinon) ; chaque session a son propre `StreamableHTTPServerTransport` et son
+  propre `createServer()`, indexés par `mcp-session-id`. Les sessions avec
+  état sont nécessaires à l'élicitation : la réponse de l'opérateur arrive
+  dans une autre requête POST que l'appel d'outil.
+
+### 7. Point d'entrée — `src/index.js`
+
+Lit `PL_MCP_TOKEN` (arrêt silencieux s'il manque), le retire de
+l'environnement, puis écoute sur `PL_MCP_HOST:PL_MCP_PORT`. L'image Docker
+lance ce fichier. Les clients authentifiés voient alors `ping` et
+`start_workflow`.
 
 ### Ajouter une étape interne
 

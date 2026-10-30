@@ -1,7 +1,39 @@
 # pokeledger-mcp
 
-Serveur MCP (Model Context Protocol) en JavaScript, exposé en **stdio** et
-distribué sous forme d'image **Docker**.
+Serveur MCP (Model Context Protocol) en JavaScript, exposé en **Streamable
+HTTP** derrière une authentification par **jeton bearer** et distribué sous
+forme d'image **Docker**.
+
+## Authentification
+
+Le serveur exige le jeton `PL_MCP_TOKEN`, défini dans le fichier `.env` de
+l'utilisateur (ignoré par Git et par Docker) :
+
+```bash
+echo "PL_MCP_TOKEN=$(node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))")" > .env
+```
+
+- **Côté serveur**, `PL_MCP_TOKEN` est la référence. S'il est absent, le
+  processus s'arrête (code 1) **sans aucune sortie**.
+- **Côté client**, chaque requête porte `Authorization: Bearer <PL_MCP_TOKEN>`.
+- Toute requête sans jeton valide, quels que soient la route et la méthode,
+  voit sa connexion **coupée sans un octet de réponse** : ni 401, ni
+  `WWW-Authenticate`, ni corps. Un client non authentifié ne reçoit ni les
+  instructions ni la liste des outils, et ne peut pas savoir qu'un serveur
+  MCP écoute. Ce choix s'écarte volontairement du RFC 6750.
+- La comparaison se fait en temps constant sur les empreintes SHA-256 des
+  jetons ; un identifiant de session ne remplace jamais le jeton.
+- Le point d'accès MCP est `/mcp` ; une requête authentifiée sur une autre
+  route reçoit un 404 vide.
+
+| Variable       | Défaut      | Rôle                               |
+| -------------- | ----------- | ---------------------------------- |
+| `PL_MCP_TOKEN` | aucun       | Jeton bearer (obligatoire)         |
+| `PL_MCP_HOST`  | `127.0.0.1` | Interface d'écoute (`0.0.0.0` dans l'image) |
+| `PL_MCP_PORT`  | `3000`      | Port d'écoute                      |
+
+Le jeton circule en clair sur HTTP : n'exposer le port que sur la boucle
+locale, ou placer un proxy TLS devant le serveur.
 
 ## Outils
 
@@ -68,7 +100,7 @@ Pour utiliser un autre dossier de règles, définir
 `POKELEDGER_START_WORKFLOW_CONTEXT_DIR` :
 
 ```bash
-docker run -i --rm -v "$PWD/mes-regles:/rules" -e POKELEDGER_START_WORKFLOW_CONTEXT_DIR=/rules pokeledger-mcp
+docker run -d --rm --env-file .env -p 127.0.0.1:3000:3000 -v "$PWD/mes-regles:/rules" -e POKELEDGER_START_WORKFLOW_CONTEXT_DIR=/rules pokeledger-mcp
 ```
 
 ## Validation des tests par l'opérateur
@@ -125,12 +157,13 @@ Prérequis : Node.js 22.8 ou plus.
 npm install
 npm test                # tests (node:test)
 npm run test:coverage   # tests + seuil de couverture à 100 %
-npm start               # lance le serveur sur stdio
+node --env-file=.env src/index.js   # lance le serveur sur http://127.0.0.1:3000/mcp
 ```
 
-`src/index.js` (point d'entrée stdio) est exclu de la couverture.
+`src/index.js` (point d'entrée HTTP) est exclu de la couverture.
 
-Les journaux sont écrits sur `stderr` : `stdout` est réservé au flux JSON-RPC.
+Les journaux sont écrits sur `stderr`, côté opérateur ; aucun n'est envoyé
+aux clients.
 
 ## Docker
 
@@ -140,56 +173,44 @@ Construire l'image :
 docker build -t pokeledger-mcp .
 ```
 
-Lancer le serveur (l'option `-i` est obligatoire pour garder `stdin` ouvert) :
+Lancer le serveur en ne publiant le port que sur la boucle locale de l'hôte :
 
 ```bash
-docker run -i --rm pokeledger-mcp
+docker run -d --rm --name pokeledger --env-file .env -p 127.0.0.1:3000:3000 pokeledger-mcp
 ```
+
+Le jeton n'est jamais intégré à l'image : `.env` est exclu du contexte de
+construction et n'est passé qu'au lancement.
 
 ## Utilisation avec Claude Code
 
-```bash
-claude mcp add pokeledger -- docker run -i --rm pokeledger-mcp
-```
-
-Ou dans un fichier `.mcp.json` :
+Le serveur doit être lancé (voir ci-dessus). Claude Code développe
+`${PL_MCP_TOKEN}` depuis l'environnement ; dans un fichier `.mcp.json` :
 
 ```json
 {
   "mcpServers": {
     "pokeledger": {
-      "command": "docker",
-      "args": ["run", "-i", "--rm", "pokeledger-mcp"]
+      "type": "http",
+      "url": "http://127.0.0.1:3000/mcp",
+      "headers": { "Authorization": "Bearer ${PL_MCP_TOKEN}" }
     }
   }
 }
 ```
 
+`PL_MCP_TOKEN` doit être exporté dans l'environnement qui lance Claude Code.
+
 ## Utilisation avec Codex (OpenAI)
 
-Construire d'abord l'image Docker (voir ci-dessus), puis l'ajouter à Codex :
-
-```bash
-codex mcp add pokeledger -- docker run -i --rm pokeledger-mcp
-```
-
-Ou dans `~/.codex/config.toml` (`.codex/config.toml` pour un projet de
-confiance) ; la CLI Codex, l'extension IDE et l'application de bureau
-partagent cette configuration :
+Le serveur doit être lancé (voir ci-dessus). Dans `~/.codex/config.toml`
+(`.codex/config.toml` pour un projet de confiance) ; la CLI Codex,
+l'extension IDE et l'application de bureau partagent cette configuration :
 
 ```toml
 [mcp_servers.pokeledger]
-command = "docker"
-args = ["run", "-i", "--rm", "pokeledger-mcp"]
-```
-
-Pour utiliser un dossier de règles personnalisé :
-
-```toml
-[mcp_servers.pokeledger]
-command = "docker"
-args = ["run", "-i", "--rm", "-v", "/chemin/vers/mes-regles:/rules",
-        "-e", "POKELEDGER_START_WORKFLOW_CONTEXT_DIR=/rules", "pokeledger-mcp"]
+url = "http://127.0.0.1:3000/mcp"
+bearer_token_env_var = "PL_MCP_TOKEN"
 ```
 
 Les étapes `validate_tests`, `choose_implementation` et
