@@ -6,7 +6,7 @@ forme d'image **Docker**.
 
 ## Authentification
 
-Le jeton bearer `PL_MCP_TOKEN`, son comportement sans jeton valide et les
+Le jeton bearer `PL_MCP_TOKEN` (obtenu par `npm run activate`), son comportement sans jeton valide et les
 variables d'environnement sont décrits dans
 [docs/authentication.md](docs/authentication.md).
 
@@ -132,10 +132,12 @@ Prérequis : Node.js 22.8 ou plus.
 npm install
 npm test                # tests (node:test)
 npm run test:coverage   # tests + seuil de couverture à 100 %
+npm run activate        # génère PL_MCP_TOKEN dans .env
 node --env-file=.env src/index.js   # lance le serveur sur http://127.0.0.1:3000/mcp
 ```
 
-`src/index.js` (point d'entrée HTTP) est exclu de la couverture.
+`src/index.js` (point d'entrée HTTP) et `src/activate/cli.js` sont exclus de
+la couverture.
 
 Les journaux sont écrits sur `stderr`, côté opérateur ; aucun n'est envoyé
 aux clients.

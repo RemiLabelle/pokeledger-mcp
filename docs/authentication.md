@@ -1,11 +1,34 @@
 # Authentification
 
 Le serveur exige le jeton `PL_MCP_TOKEN`, défini dans le fichier `.env` de
-l'utilisateur (ignoré par Git et par Docker) :
+l'utilisateur (ignoré par Git et par Docker).
+
+## Obtenir un jeton
 
 ```bash
-echo "PL_MCP_TOKEN=$(node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))")" > .env
+npm run activate
 ```
+
+La commande génère un jeton de 32 octets aléatoires (base64url) et l'écrit
+dans le `.env` du dossier courant :
+
+- sans `.env`, le fichier est créé (mode `0600` hors Windows) ;
+- sinon, son contenu et ses fins de ligne sont conservés et `PL_MCP_TOKEN`
+  est ajouté, ou rempli s'il était vide ;
+- un jeton déjà défini n'est **ni écrasé ni affiché** (code de sortie 1).
+  `npm run activate -- --force` le remplace : l'ancien jeton devient
+  invalide au redémarrage du serveur.
+
+Le jeton est affiché une seule fois, avec un avertissement **URGENT** : le
+conserver dans un gestionnaire de mots de passe est le seul moyen de rétablir
+l'accès si le `.env` est perdu. Lancée par un agent, la commande expose le
+jeton dans sa conversation.
+
+La commande est purement locale : aucun outil MCP ne délivre de jeton, et le
+serveur reste muet envers tout client non authentifié. Redémarrer le serveur
+après une activation.
+
+## Comportement du serveur
 
 - **Côté serveur**, `PL_MCP_TOKEN` est la référence. S'il est absent, le
   processus s'arrête (code 1) **sans aucune sortie**.

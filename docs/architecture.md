@@ -6,6 +6,9 @@
 src/index.js                  point d'entrée HTTP (lit PL_MCP_TOKEN)
 src/http.js                   serveur HTTP, sessions MCP, coupure des requêtes non authentifiées
 src/auth.js                   garde bearer (comparaison en temps constant)
+src/activate/                 commande locale `npm run activate` (génération du jeton)
+  index.js, texts.js, context/ logique, gabarits et messages du terminal
+  cli.js                      point d'entrée, exclu de la couverture
 src/server.js                 création du serveur, enregistrement des outils publics
 test/                         tests de src/
 tools/<outil>/                un dossier par outil ou étape interne
