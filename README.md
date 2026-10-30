@@ -18,7 +18,13 @@ tâche de code : versionnage local après chaque unité sémantique (sans
 co-auteur, sans jamais pousser), conventions Git,
 workflow TDD et commentaires en français. Les instructions du serveur lui
 demandent d'appeler cet outil avant de commencer. Le paramètre optionnel
-`sections` (`versioning`, `git`, `tdd`, `comments`) limite la réponse.
+`sections` (`terminology`, `versioning`, `git`, `tdd`, `comments`) limite la
+réponse.
+
+Les règles et les messages destinés à l'agent sont rédigés en français avec
+les mots-clés du BCP 14 ([RFC 2119], [RFC 8174]) en majuscules : DOIT,
+NE DOIT PAS, DEVRAIT, PEUT… La section `terminology` donne la correspondance
+avec les mots-clés anglais.
 
 Toutes les règles et tous les textes destinés au modèle sont dans
 `tools/start_workflow/context/`,
@@ -27,6 +33,7 @@ séparés du code :
 | Fichier                   | Contenu                                         |
 | ------------------------- | ----------------------------------------------- |
 | `manifest.json`           | Liste et ordre des sections, fichiers associés  |
+| `terminology.md`          | Mots-clés BCP 14 et leur correspondance         |
 | `versioning.md`           | Cadence de versionnage                          |
 | `git-conventions.md`      | Conventions Git de l'équipe                     |
 | `tdd.md`                  | Workflow TDD et règle de couverture             |
@@ -129,3 +136,6 @@ tools/validate_tests/
   texts.js                    chargement et rendu des gabarits
   context/                    messages à l'opérateur et à l'agent
 ```
+
+[RFC 2119]: https://www.rfc-editor.org/rfc/rfc2119
+[RFC 8174]: https://www.rfc-editor.org/rfc/rfc8174
