@@ -2,6 +2,7 @@
   "instructions": "server-instructions.md",
   "toolDescription": "tool-description.md",
   "sections": [
+    { "id": "terminology", "title": "Terminologie", "file": "terminology.md" },
     { "id": "versioning", "title": "Versionnage", "file": "versioning.md" },
     { "id": "git", "title": "Conventions Git", "file": "git-conventions.md" },
     { "id": "tdd", "title": "Workflow TDD", "file": "tdd.md" },
