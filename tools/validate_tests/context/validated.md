@@ -2,5 +2,6 @@ Tests validés par l'opérateur.
 
 Remarques de l'opérateur : {{feedback}}
 
-Committez les tests (`test(<scope>): …`) puis commencez le développement.
-À partir de maintenant, ces tests ne doivent plus être modifiés.
+L'agent DOIT committer les tests seuls (`test(<scope>): …`) avant d'écrire du
+code de production ; il PEUT ensuite commencer le développement. À partir de
+ce commit, les tests NE DOIVENT PLUS être modifiés.

@@ -1,8 +1,8 @@
-L'opérateur demande de retravailler les tests. Ne commencez pas le
-développement.
+L'opérateur demande de retravailler les tests. L'agent NE DOIT PAS commencer
+le développement.
 
 Retours de l'opérateur :
 {{feedback}}
 
-Modifiez les tests selon ces retours, puis rappelez `validate_tests` avec le
-résumé mis à jour.
+L'agent DOIT modifier les tests selon ces retours, puis DOIT rappeler
+`validate_tests` avec le résumé mis à jour.

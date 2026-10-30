@@ -1,4 +1,5 @@
-La validation n'a pas pu être demandée à l'opérateur par le serveur MCP
-(raison : {{reason}}). Ne commencez pas le développement : présentez à
-l'opérateur, dans la conversation, la portée et les cas couverts par les
-tests, puis attendez une validation explicite ou ses retours.
+Le serveur MCP n'a pas pu demander la validation à l'opérateur
+(raison : {{reason}}). L'agent NE DOIT PAS commencer le développement ; il
+DOIT présenter à l'opérateur, dans la conversation, la portée et les cas
+couverts par les tests, puis DOIT attendre une validation explicite ou ses
+retours.
