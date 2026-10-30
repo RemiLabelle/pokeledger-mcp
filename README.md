@@ -86,6 +86,11 @@ changer. L'étape renvoie un `status` :
 | `not_validated` | L'opérateur a refusé ou annulé : ne pas développer             |
 | `unavailable`   | Client sans élicitation : demander la validation dans le chat  |
 
+Avec `validated`, l'étape renvoie aussi le **skill de développement**
+(`tools/validate_tests/context/development-skill.md`) dans un second bloc de
+texte : abstraction privilégiée, principes SOLID et patrons de conception
+identifiables par les noms de fichiers, classes, packages ou méthodes.
+
 Les messages et libellés du formulaire sont dans
 `tools/validate_tests/context/` (gabarits `{{clé}}` et `strings.json`) et sont
 relus à chaque appel.
