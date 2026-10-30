@@ -9,6 +9,7 @@ distribué sous forme d'image **Docker**.
 | ---------------- | ---------------------------------------------------------------------- |
 | `ping`           | Vérifie que le serveur répond. Renvoie `pong`.                         |
 | `start_workflow` | Renvoie les règles de travail obligatoires pour l'agent (ci-dessous). |
+| `validate_tests` | Demande à l'opérateur de valider les tests avant le développement.    |
 
 ## Contexte de travail de l'agent
 
@@ -44,6 +45,25 @@ Pour utiliser un autre dossier de règles, définir
 ```bash
 docker run -i --rm -v "$PWD/mes-regles:/rules" -e POKELEDGER_START_WORKFLOW_CONTEXT_DIR=/rules pokeledger-mcp
 ```
+
+## Validation des tests par l'opérateur
+
+Une fois les tests d'une tâche écrits, l'agent appelle `validate_tests` avec la
+tâche, la portée et la liste des cas couverts. Le serveur présente ce résumé à
+l'opérateur par une **élicitation MCP** (formulaire natif du client) :
+l'opérateur valide les tests ou demande une reprise en précisant ce qui doit
+changer. L'outil renvoie un `status` :
+
+| `status`        | Consigne pour l'agent                                          |
+| --------------- | -------------------------------------------------------------- |
+| `validated`     | Committer les tests puis commencer le développement            |
+| `rework`        | Retravailler les tests selon `feedback`, puis rappeler l'outil |
+| `not_validated` | L'opérateur a refusé ou annulé : ne pas développer             |
+| `unavailable`   | Client sans élicitation : demander la validation dans le chat  |
+
+Les messages et libellés du formulaire sont dans
+`tools/validate_tests/context/` (gabarits `{{clé}}` et `strings.json`) et sont
+relus à chaque appel.
 
 ## Développement local
 
@@ -105,4 +125,7 @@ tools/start_workflow/
   context.js                  chargement des fichiers de contexte
   context/                    règles et textes destinés au modèle
   test/fixtures/              dossiers de contexte de test
+tools/validate_tests/
+  texts.js                    chargement et rendu des gabarits
+  context/                    messages à l'opérateur et à l'agent
 ```
