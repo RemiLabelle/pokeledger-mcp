@@ -6,9 +6,10 @@ export const DEFAULT_CONTEXT_DIR = path.resolve(path.dirname(fileURLToPath(impor
 
 const SEPARATOR = "\n\n---\n\n";
 
-// Détermine le dossier de contexte : POKELEDGER_CONTEXT_DIR s'il est défini, sinon le dossier livré.
+// Détermine le dossier de contexte : POKELEDGER_START_WORKFLOW_CONTEXT_DIR s'il est défini, sinon le dossier livré.
 export function resolveContextDir(env = process.env) {
-  return env.POKELEDGER_CONTEXT_DIR ? path.resolve(env.POKELEDGER_CONTEXT_DIR) : DEFAULT_CONTEXT_DIR;
+  const dir = env.POKELEDGER_START_WORKFLOW_CONTEXT_DIR;
+  return dir ? path.resolve(dir) : DEFAULT_CONTEXT_DIR;
 }
 
 // Lit un fichier du dossier de contexte et retire les espaces de début et de fin.

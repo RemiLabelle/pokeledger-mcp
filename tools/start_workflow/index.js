@@ -7,9 +7,9 @@ export function registerStartWorkflow(server, contextDir) {
   const sectionIds = loadManifest(contextDir).sections.map((s) => s.id);
 
   server.registerTool(
-    "get_workflow_context",
+    "start_workflow",
     {
-      title: "Workflow context",
+      title: "Start workflow",
       description: toolDescription,
       inputSchema: {
         sections: z
