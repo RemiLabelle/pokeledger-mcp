@@ -20,8 +20,8 @@ tâche de code : versionnage local après chaque unité sémantique (sans
 co-auteur, sans jamais pousser), conventions Git,
 workflow TDD et commentaires en français. Les instructions du serveur lui
 demandent d'appeler cet outil avant de commencer. Le paramètre optionnel
-`sections` (`terminology`, `versioning`, `git`, `tdd`, `comments`) limite la
-réponse.
+`sections` (`terminology`, `versioning`, `git`, `tdd`, `decisions`,
+`comments`) limite la réponse.
 
 Les règles et les messages destinés à l'agent sont rédigés en français avec
 les mots-clés du BCP 14 ([RFC 2119], [RFC 8174]) en majuscules : DOIT,
@@ -39,6 +39,7 @@ séparés du code :
 | `versioning.md`           | Cadence de versionnage                          |
 | `git-conventions.md`      | Conventions Git de l'équipe                     |
 | `tdd.md`                  | Workflow TDD et règle de couverture             |
+| `decisions.md`            | Choix d'implémentation par l'opérateur          |
 | `comments.md`             | Langue des commentaires                         |
 | `server-instructions.md`  | Instructions envoyées au client à la connexion  |
 | `tool-description.md`     | Description de l'outil vue par le modèle        |
