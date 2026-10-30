@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
-import { createServer } from "../src/server.js";
+import { createServer } from "../../src/server.js";
 
 test("ping tool responds pong", async () => {
   const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();

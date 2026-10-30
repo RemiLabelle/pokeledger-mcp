@@ -6,8 +6,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
-import { createServer } from "../src/server.js";
-import { DEFAULT_CONTEXT_DIR, buildContext, loadServerTexts } from "../src/context.js";
+import { createServer } from "../../../src/server.js";
+import { DEFAULT_CONTEXT_DIR, buildContext, loadServerTexts } from "../context.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURE = path.join(here, "fixtures", "context-full");

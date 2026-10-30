@@ -2,11 +2,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-export const DEFAULT_CONTEXT_DIR = path.resolve(
-  path.dirname(fileURLToPath(import.meta.url)),
-  "..",
-  "context",
-);
+export const DEFAULT_CONTEXT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "context");
 
 const SEPARATOR = "\n\n---\n\n";
 

@@ -10,7 +10,7 @@ import {
   loadManifest,
   buildContext,
   loadServerTexts,
-} from "../src/context.js";
+} from "../context.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const fixture = (name) => path.join(here, "fixtures", name);
