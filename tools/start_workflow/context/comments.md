@@ -1,6 +1,7 @@
 # Commentaires
 
-- Chaque définition de fonction ou de méthode est précédée d'un commentaire
-  **en français** qui décrit son rôle (une ligne suffit ; JSDoc accepté).
-- Le reste du code (identifiants, messages de commit, noms de branches) reste
-  en anglais, conformément aux conventions Git.
+- Chaque définition de fonction ou de méthode DOIT être précédée d'un
+  commentaire en français qui décrit son rôle. Une seule ligne PEUT suffire ;
+  le format JSDoc PEUT être utilisé.
+- Le reste du code (identifiants, messages de commit, noms de branches) DOIT
+  rester en anglais, conformément aux conventions Git.
