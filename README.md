@@ -5,12 +5,14 @@ distribué sous forme d'image **Docker**.
 
 ## Outils
 
-Seuls deux outils sont publics :
+Quatre outils sont publics :
 
 | Outil            | Description                                                                         |
 | ---------------- | ----------------------------------------------------------------------------------- |
 | `ping`           | Vérifie que le serveur répond. Renvoie `pong`.                                      |
 | `start_workflow` | Renvoie les règles de travail de l'agent (ci-dessous) et exécute les étapes internes. |
+| `keep_track`     | Conserve entre les sessions ce que l'agent apprend de l'opérateur.                  |
+| `neuralyze`      | Efface toute la mémoire de `keep_track`, après confirmation de l'opérateur.         |
 
 Les étapes internes ne sont pas listées comme outils ; l'agent les lance par
 `start_workflow` avec `step` et `input` :
@@ -69,6 +71,36 @@ Pour utiliser un autre dossier de règles, définir
 
 ```bash
 docker run -i --rm -v "$PWD/mes-regles:/rules" -e POKELEDGER_START_WORKFLOW_CONTEXT_DIR=/rules pokeledger-mcp
+```
+
+## Mémoire de l'agent
+
+`keep_track` s'inspire du skill
+[self-improving](https://clawhub.ai/ivangdavila/skills/self-improving) : il en
+reprend les niveaux, les limites de taille et la promotion, mais ni la
+dégradation dans le temps ni les fichiers d'espace de travail.
+
+| Action   | Rôle                                                                       |
+| -------- | -------------------------------------------------------------------------- |
+| `record` | Enregistre une leçon, ou compte sa répétition.                             |
+| `recall` | Renvoie le niveau `hot`, le niveau `warm` d'un `namespace` ou, avec `query`, les entrées de tous les niveaux. |
+| `stats`  | Compte les entrées de chaque niveau.                                       |
+
+| Niveau | Contenu                                         | Limite                     |
+| ------ | ----------------------------------------------- | -------------------------- |
+| `hot`  | Préférences et leçons répétées trois fois       | 100 entrées                |
+| `warm` | Nouvelles corrections et réflexions             | 200 entrées par `namespace` |
+| `cold` | Entrées archivées, atteintes seulement par `query` | Aucune                  |
+
+Au-delà d'une limite, l'entrée la plus ancienne descend d'un niveau. Le niveau
+`cold` grandit donc jusqu'au prochain appel de `neuralyze`.
+
+La mémoire est un fichier `memory.json` situé dans
+`POKELEDGER_KEEP_TRACK_DIR`, par défaut `~/.pokeledger/keep-track`. Avec
+`docker run --rm`, elle est perdue à la sortie du conteneur sans volume :
+
+```bash
+docker run -i --rm -v pokeledger-memory:/home/node/.pokeledger/keep-track pokeledger-mcp
 ```
 
 ## Validation des tests par l'opérateur
