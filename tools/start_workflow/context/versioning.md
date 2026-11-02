@@ -2,6 +2,10 @@
 
 Ces règles s'appliquent à toute tâche de code principale confiée à l'agent.
 
+- S'il existe des modifications non indexées ou des fichiers non suivis,
+  l'agent DOIT les remiser au début de la tâche
+  (`git stash push --include-untracked`) et DOIT les restaurer à la fin de la
+  tâche (`git stash pop`).
 - Avant de commencer, l'agent DOIT vérifier que l'arbre de travail est propre
   (`git status`), puis DOIT créer une branche de travail selon les conventions
   Git.
