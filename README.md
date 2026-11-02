@@ -103,6 +103,23 @@ La mémoire est un fichier `memory.json` situé dans
 docker run -i --rm -v pokeledger-memory:/home/node/.pokeledger/keep-track pokeledger-mcp
 ```
 
+## Formulaires de l'opérateur
+
+`validate_tests`, `choose_implementation`, `confirm_custom_implementation` et
+`neuralyze` questionnent l'opérateur par élicitation MCP. Tous les clients
+n'affichent pas ces formulaires : l'onglet Code de l'application de bureau
+Claude exécute Claude Code en mode *print*, qui les refuse automatiquement sans
+les montrer. Le serveur ne peut pas distinguer ce refus de celui d'une personne.
+
+Le résultat structuré (`structuredContent`) contient donc toujours les consignes
+(`instructions`) et, si le formulaire n'est pas accepté, la réponse du client
+(`action`). Les trois étapes y ajoutent la question (`question`), pour que
+l'agent la pose dans la conversation.
+
+`neuralyze` n'accepte pas de confirmation par la conversation : pour effacer la
+mémoire, lancer l'outil depuis une session `claude` dans un terminal, avec le
+même dossier ou le même volume de mémoire.
+
 ## Validation des tests par l'opérateur
 
 Une fois les tests d'une tâche écrits, l'agent lance l'étape `validate_tests` avec la
