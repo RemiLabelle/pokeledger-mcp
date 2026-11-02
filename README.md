@@ -294,6 +294,8 @@ on: workflow_dispatch
 jobs:
   copilot-setup-steps:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
       - run: docker build -t pokeledger-mcp .
