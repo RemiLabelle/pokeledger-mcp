@@ -23,9 +23,10 @@ function operatorForm(strings) {
   };
 }
 
-// Construit le résultat de l'outil : le message pour l'agent et l'état exploitable par programme.
+// Construit le résultat de l'outil ; la consigne est aussi dans l'état, seul contenu visible sur certains clients.
 function reply(template, values, structuredContent) {
-  return { content: [{ type: "text", text: renderTemplate(template, values) }], structuredContent };
+  const text = renderTemplate(template, values);
+  return { content: [{ type: "text", text }], structuredContent: { ...structuredContent, instructions: text } };
 }
 
 // Étape interne qui demande à l'opérateur de valider les tests avant le développement.
@@ -52,11 +53,19 @@ export const validateTests = {
     try {
       answer = await server.server.elicitInput({ message, requestedSchema: operatorForm(texts.strings) });
     } catch (error) {
-      return reply(texts.unavailable, { reason: error.message }, { status: "unavailable", reason: error.message });
+      return reply(
+        texts.unavailable,
+        { reason: error.message },
+        { status: "unavailable", reason: error.message, question: message },
+      );
     }
 
     if (answer.action !== "accept") {
-      return reply(texts.notValidated, { action: answer.action }, { status: "not_validated" });
+      return reply(
+        texts.notValidated,
+        { action: answer.action },
+        { status: "not_validated", action: answer.action, question: message },
+      );
     }
 
     const { decision, feedback = "" } = answer.content;
@@ -68,6 +77,7 @@ export const validateTests = {
       );
       // Le skill de développement suit la validation pour guider l'agent pendant le développement.
       result.content.push({ type: "text", text: texts.developmentSkill });
+      result.structuredContent.instructions += `\n\n${texts.developmentSkill}`;
       return result;
     }
     return reply(texts.rework, { feedback: feedback || texts.strings.noReworkFeedback }, { status: "rework", feedback });
