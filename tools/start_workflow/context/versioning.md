@@ -13,7 +13,7 @@ Ces règles s'appliquent à toute tâche de code principale confiée à l'agent.
 - Chaque commit DOIT correspondre à une seule unité sémantique et DOIT suivre
   le format des conventions Git (`<type>(<scope>): <description>`, en anglais,
   à l'impératif).
-- Hormis le commit qui ajoute les tests validés d'une tâche (voir Workflow
+- Hormis le commit qui ajoute les tests validés d'une tranche (voir Workflow
   TDD), un commit NE DOIT PAS casser les tests existants.
 - Les messages de commit NE DOIVENT PAS contenir de ligne `Co-Authored-By:` ni
   aucune autre mention de co-auteur ou d'attribution.
