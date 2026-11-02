@@ -2,6 +2,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { registerPing } from "../tools/ping/index.js";
 import { registerKeepTrack } from "../tools/keep_track/index.js";
 import { resolveMemoryDir } from "../tools/keep_track/memory-store.js";
+import { registerNeuralyze } from "../tools/neuralyze/index.js";
 import { registerStartWorkflow } from "../tools/start_workflow/index.js";
 import { loadServerTexts, resolveContextDir } from "../tools/start_workflow/context.js";
 
@@ -13,6 +14,7 @@ export function createServer({ contextDir = resolveContextDir(), memoryDir = res
   registerPing(server);
   registerStartWorkflow(server, contextDir);
   registerKeepTrack(server, memoryDir);
+  registerNeuralyze(server, memoryDir);
 
   return server;
 }

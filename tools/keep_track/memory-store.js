@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import path from "node:path";
 
@@ -14,6 +14,11 @@ export function resolveMemoryDir(env = process.env) {
 export function loadEntries(memoryDir) {
   const file = path.join(memoryDir, MEMORY_FILE);
   return existsSync(file) ? JSON.parse(readFileSync(file, "utf8")) : [];
+}
+
+// Efface toute la mémoire conservée dans memoryDir.
+export function wipeEntries(memoryDir) {
+  rmSync(path.join(memoryDir, MEMORY_FILE), { force: true });
 }
 
 // Écrit les entrées dans memoryDir, en créant le dossier au besoin.
