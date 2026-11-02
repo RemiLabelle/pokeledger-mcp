@@ -44,10 +44,10 @@ export function registerNeuralyze(server, memoryDir) {
       try {
         answer = await server.server.elicitInput({ message, requestedSchema: confirmationForm(strings) });
       } catch (error) {
-        return reply({ status: "unavailable", reason: error.message });
+        return reply({ status: "unavailable", reason: error.message, instructions: readText("not-confirmed.md") });
       }
       if (answer.action !== "accept" || answer.content.confirm !== true) {
-        return reply({ status: "not_confirmed" });
+        return reply({ status: "not_confirmed", action: answer.action, instructions: readText("not-confirmed.md") });
       }
       wipeEntries(memoryDir);
       return reply({ status: "wiped", removed });
