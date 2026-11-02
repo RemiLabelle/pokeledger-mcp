@@ -18,6 +18,13 @@ tools/choose_implementation/,
 tools/confirm_custom_implementation/
   texts.js                    chargement et rendu des gabarits
   context/                    messages à l'opérateur et à l'agent
+tools/keep_track/
+  index.js                    outil public et actions sur la mémoire
+  memory-store.js             lecture, écriture et effacement de `memory.json`
+  context/                    description de l'outil
+tools/neuralyze/
+  index.js                    outil public d'effacement de la mémoire
+  context/                    description et formulaire de confirmation
 ```
 
 ## Du code à l'exposition publique
@@ -87,8 +94,9 @@ d'aide (`operatorForm`, `reply`, `bullets`) restent privées au module.
 
 ### 4. Outil public — `tools/start_workflow/index.js`
 
-`registerStartWorkflow` est le seul point qui transforme du code en outil
-MCP, avec `ping` :
+`registerStartWorkflow` transforme les étapes internes en outil MCP.
+`registerPing`, `registerKeepTrack` et `registerNeuralyze` déclarent les autres
+outils publics, sans étape interne :
 
 1. la table `STEPS` réunit les objets étape par leur `name` ;
 2. `registerTool("start_workflow", …)` déclare le schéma public : `sections`,
@@ -106,10 +114,11 @@ par `start_workflow`.
 
 - `createServer` crée le `McpServer` avec les instructions issues du contexte
   et enregistre uniquement les outils publics (`registerPing`,
-  `registerStartWorkflow`). C'est le point d'entrée des tests, qui s'y
-  connectent par `InMemoryTransport`.
+  `registerStartWorkflow`, `registerKeepTrack`, `registerNeuralyze`). C'est le
+  point d'entrée des tests, qui s'y connectent par `InMemoryTransport`.
 - `src/index.js` relie ce serveur au transport stdio ; l'image Docker lance
-  ce fichier. Les clients MCP voient alors `ping` et `start_workflow`.
+  ce fichier. Les clients MCP voient alors `ping`, `start_workflow`,
+  `keep_track` et `neuralyze`.
 
 ### Ajouter une étape interne
 

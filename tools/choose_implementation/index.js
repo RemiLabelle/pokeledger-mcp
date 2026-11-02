@@ -22,7 +22,8 @@ function operatorForm(options, strings) {
 
 // Construit le résultat de l'outil : le message pour l'agent et l'état exploitable par programme.
 function reply(template, values, structuredContent) {
-  return { content: [{ type: "text", text: renderTemplate(template, values) }], structuredContent };
+  const text = renderTemplate(template, values);
+  return { content: [{ type: "text", text }], structuredContent: { ...structuredContent, instructions: text } };
 }
 
 // Étape interne qui fait choisir à l'opérateur l'implémentation d'une logique non établie.
@@ -58,11 +59,19 @@ export const chooseImplementation = {
     try {
       answer = await server.server.elicitInput({ message, requestedSchema: operatorForm(options, texts.strings) });
     } catch (error) {
-      return reply(texts.unavailable, { reason: error.message }, { status: "unavailable", reason: error.message });
+      return reply(
+        texts.unavailable,
+        { reason: error.message },
+        { status: "unavailable", reason: error.message, question: message },
+      );
     }
 
     if (answer.action !== "accept") {
-      return reply(texts.notChosen, { action: answer.action }, { status: "not_chosen" });
+      return reply(
+        texts.notChosen,
+        { action: answer.action },
+        { status: "not_chosen", action: answer.action, question: message },
+      );
     }
 
     const { choice, custom = "" } = answer.content;

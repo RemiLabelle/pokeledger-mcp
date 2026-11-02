@@ -5,12 +5,14 @@ distribué sous forme d'image **Docker**.
 
 ## Outils
 
-Seuls deux outils sont publics :
+Quatre outils sont publics :
 
 | Outil            | Description                                                                         |
 | ---------------- | ----------------------------------------------------------------------------------- |
 | `ping`           | Vérifie que le serveur répond. Renvoie `pong`.                                      |
 | `start_workflow` | Renvoie les règles de travail de l'agent (ci-dessous) et exécute les étapes internes. |
+| `keep_track`     | Conserve entre les sessions ce que l'agent apprend de l'opérateur.                  |
+| `neuralyze`      | Efface toute la mémoire de `keep_track`, après confirmation de l'opérateur.         |
 
 Les étapes internes ne sont pas listées comme outils ; l'agent les lance par
 `start_workflow` avec `step` et `input` :
@@ -53,7 +55,7 @@ séparés du code :
 | `terminology.md`          | Mots-clés BCP 14 et leur correspondance         |
 | `versioning.md`           | Cadence de versionnage                          |
 | `git-conventions.md`      | Conventions Git de l'équipe                     |
-| `tdd.md`                  | Workflow TDD et règle de couverture             |
+| `tdd.md`                  | Workflow TDD par tranches et qualité des tests  |
 | `decisions.md`            | Choix d'implémentation par l'opérateur          |
 | `comments.md`             | Langue des commentaires                         |
 | `server-instructions.md`  | Instructions envoyées au client à la connexion  |
@@ -68,8 +70,55 @@ Pour utiliser un autre dossier de règles, définir
 `POKELEDGER_START_WORKFLOW_CONTEXT_DIR` :
 
 ```bash
-docker run -i --rm -v "$PWD/mes-regles:/rules" -e POKELEDGER_START_WORKFLOW_CONTEXT_DIR=/rules pokeledger-mcp
+docker run -i --rm -v pokeledger-memory:/home/node/.pokeledger/keep-track -v "$PWD/mes-regles:/rules" -e POKELEDGER_START_WORKFLOW_CONTEXT_DIR=/rules pokeledger-mcp
 ```
+
+## Mémoire de l'agent
+
+`keep_track` s'inspire du skill
+[self-improving](https://clawhub.ai/ivangdavila/skills/self-improving) : il en
+reprend les niveaux, les limites de taille et la promotion, mais ni la
+dégradation dans le temps ni les fichiers d'espace de travail.
+
+| Action   | Rôle                                                                       |
+| -------- | -------------------------------------------------------------------------- |
+| `record` | Enregistre une leçon, ou compte sa répétition.                             |
+| `recall` | Renvoie le niveau `hot`, le niveau `warm` d'un `namespace` ou, avec `query`, les entrées de tous les niveaux. |
+| `stats`  | Compte les entrées de chaque niveau.                                       |
+
+| Niveau | Contenu                                         | Limite                     |
+| ------ | ----------------------------------------------- | -------------------------- |
+| `hot`  | Préférences et leçons répétées trois fois       | 100 entrées                |
+| `warm` | Nouvelles corrections et réflexions             | 200 entrées par `namespace` |
+| `cold` | Entrées archivées, atteintes seulement par `query` | Aucune                  |
+
+Au-delà d'une limite, l'entrée la plus ancienne descend d'un niveau. Le niveau
+`cold` grandit donc jusqu'au prochain appel de `neuralyze`.
+
+La mémoire est un fichier `memory.json` situé dans
+`POKELEDGER_KEEP_TRACK_DIR`, par défaut `~/.pokeledger/keep-track`. Avec
+`docker run --rm`, elle est perdue à la sortie du conteneur sans volume :
+
+```bash
+docker run -i --rm -v pokeledger-memory:/home/node/.pokeledger/keep-track pokeledger-mcp
+```
+
+## Formulaires de l'opérateur
+
+`validate_tests`, `choose_implementation`, `confirm_custom_implementation` et
+`neuralyze` questionnent l'opérateur par élicitation MCP. Tous les clients
+n'affichent pas ces formulaires : l'onglet Code de l'application de bureau
+Claude exécute Claude Code en mode *print*, qui les refuse automatiquement sans
+les montrer. Le serveur ne peut pas distinguer ce refus de celui d'une personne.
+
+Le résultat structuré (`structuredContent`) contient donc toujours les consignes
+(`instructions`) et, si le formulaire n'est pas accepté, la réponse du client
+(`action`). Les trois étapes y ajoutent la question (`question`), pour que
+l'agent la pose dans la conversation.
+
+`neuralyze` n'accepte pas de confirmation par la conversation : pour effacer la
+mémoire, lancer l'outil depuis une session `claude` dans un terminal, avec le
+même dossier ou le même volume de mémoire.
 
 ## Validation des tests par l'opérateur
 
@@ -143,13 +192,16 @@ docker build -t pokeledger-mcp .
 Lancer le serveur (l'option `-i` est obligatoire pour garder `stdin` ouvert) :
 
 ```bash
-docker run -i --rm pokeledger-mcp
+docker run -i --rm -v pokeledger-memory:/home/node/.pokeledger/keep-track pokeledger-mcp
 ```
+
+Le volume `pokeledger-memory` conserve la mémoire de `keep_track` entre les
+sessions (voir [Mémoire de l'agent](#mémoire-de-lagent)).
 
 ## Utilisation avec Claude Code
 
 ```bash
-claude mcp add pokeledger -- docker run -i --rm pokeledger-mcp
+claude mcp add pokeledger -- docker run -i --rm -v pokeledger-memory:/home/node/.pokeledger/keep-track pokeledger-mcp
 ```
 
 Ou dans un fichier `.mcp.json` :
@@ -159,18 +211,105 @@ Ou dans un fichier `.mcp.json` :
   "mcpServers": {
     "pokeledger": {
       "command": "docker",
-      "args": ["run", "-i", "--rm", "pokeledger-mcp"]
+      "args": ["run", "-i", "--rm", "-v", "pokeledger-memory:/home/node/.pokeledger/keep-track", "pokeledger-mcp"]
     }
   }
 }
 ```
+
+## Utilisation avec GitHub Copilot
+
+Construire d'abord l'image Docker (voir [Docker](#docker)).
+
+### Copilot CLI et VS Code
+
+Ajouter le serveur à la configuration utilisateur
+`~/.copilot/mcp-config.json`, lue par Copilot CLI et par les sessions Copilot de
+VS Code :
+
+```bash
+copilot mcp add pokeledger -- docker run -i --rm -v pokeledger-memory:/home/node/.pokeledger/keep-track pokeledger-mcp
+```
+
+Ou dans ce fichier, ou dans un fichier `.mcp.json` à la racine du projet :
+
+```json
+{
+  "mcpServers": {
+    "pokeledger": {
+      "type": "local",
+      "command": "docker",
+      "args": ["run", "-i", "--rm", "-v", "pokeledger-memory:/home/node/.pokeledger/keep-track", "pokeledger-mcp"],
+      "tools": ["*"]
+    }
+  }
+}
+```
+
+Dans VS Code, un `.mcp.json` à la racine n'est proposé que si le réglage
+expérimental `chat.mcp.workspaceRootConfig.enabled` est actif.
+
+VS Code accepte aussi son format historique, dans `.vscode/mcp.json`, avec un
+objet `servers` :
+
+```json
+{
+  "servers": {
+    "pokeledger": {
+      "type": "stdio",
+      "command": "docker",
+      "args": ["run", "-i", "--rm", "-v", "pokeledger-memory:/home/node/.pokeledger/keep-track", "pokeledger-mcp"]
+    }
+  }
+}
+```
+
+### Agent cloud Copilot
+
+Un administrateur du dépôt ajoute la configuration dans les réglages MCP du
+dépôt sur GitHub. La clé `tools` liste les outils autorisés ; cet exemple exclut
+`neuralyze`, qui ne pourrait effacer qu'une mémoire éphémère :
+
+```json
+{
+  "mcpServers": {
+    "pokeledger": {
+      "type": "local",
+      "command": "docker",
+      "args": ["run", "-i", "--rm", "pokeledger-mcp"],
+      "tools": ["ping", "start_workflow", "keep_track"]
+    }
+  }
+}
+```
+
+L'image n'étant pas publiée, il faut la construire dans
+`.github/workflows/copilot-setup-steps.yml`, un fichier qui DOIT être présent sur
+la branche par défaut :
+
+```yaml
+name: Copilot Setup Steps
+on: workflow_dispatch
+
+jobs:
+  copilot-setup-steps:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t pokeledger-mcp .
+```
+
+L'environnement de l'agent cloud est éphémère : un volume Docker n'y conserve
+pas la mémoire de `keep_track` d'une session à l'autre.
 
 ## Utilisation avec Codex (OpenAI)
 
 Construire d'abord l'image Docker (voir ci-dessus), puis l'ajouter à Codex :
 
 ```bash
-codex mcp add pokeledger -- docker run -i --rm pokeledger-mcp
+codex mcp add pokeledger -- docker run -i --rm -v pokeledger-memory:/home/node/.pokeledger/keep-track pokeledger-mcp
 ```
 
 Ou dans `~/.codex/config.toml` (`.codex/config.toml` pour un projet de
@@ -180,7 +319,7 @@ partagent cette configuration :
 ```toml
 [mcp_servers.pokeledger]
 command = "docker"
-args = ["run", "-i", "--rm", "pokeledger-mcp"]
+args = ["run", "-i", "--rm", "-v", "pokeledger-memory:/home/node/.pokeledger/keep-track", "pokeledger-mcp"]
 ```
 
 Pour utiliser un dossier de règles personnalisé :
@@ -188,7 +327,8 @@ Pour utiliser un dossier de règles personnalisé :
 ```toml
 [mcp_servers.pokeledger]
 command = "docker"
-args = ["run", "-i", "--rm", "-v", "/chemin/vers/mes-regles:/rules",
+args = ["run", "-i", "--rm", "-v", "pokeledger-memory:/home/node/.pokeledger/keep-track",
+        "-v", "/chemin/vers/mes-regles:/rules",
         "-e", "POKELEDGER_START_WORKFLOW_CONTEXT_DIR=/rules", "pokeledger-mcp"]
 ```
 
