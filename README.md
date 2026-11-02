@@ -70,7 +70,7 @@ Pour utiliser un autre dossier de règles, définir
 `POKELEDGER_START_WORKFLOW_CONTEXT_DIR` :
 
 ```bash
-docker run -i --rm -v "$PWD/mes-regles:/rules" -e POKELEDGER_START_WORKFLOW_CONTEXT_DIR=/rules pokeledger-mcp
+docker run -i --rm -v pokeledger-memory:/home/node/.pokeledger/keep-track -v "$PWD/mes-regles:/rules" -e POKELEDGER_START_WORKFLOW_CONTEXT_DIR=/rules pokeledger-mcp
 ```
 
 ## Mémoire de l'agent
@@ -192,13 +192,16 @@ docker build -t pokeledger-mcp .
 Lancer le serveur (l'option `-i` est obligatoire pour garder `stdin` ouvert) :
 
 ```bash
-docker run -i --rm pokeledger-mcp
+docker run -i --rm -v pokeledger-memory:/home/node/.pokeledger/keep-track pokeledger-mcp
 ```
+
+Le volume `pokeledger-memory` conserve la mémoire de `keep_track` entre les
+sessions (voir [Mémoire de l'agent](#mémoire-de-lagent)).
 
 ## Utilisation avec Claude Code
 
 ```bash
-claude mcp add pokeledger -- docker run -i --rm pokeledger-mcp
+claude mcp add pokeledger -- docker run -i --rm -v pokeledger-memory:/home/node/.pokeledger/keep-track pokeledger-mcp
 ```
 
 Ou dans un fichier `.mcp.json` :
@@ -208,7 +211,7 @@ Ou dans un fichier `.mcp.json` :
   "mcpServers": {
     "pokeledger": {
       "command": "docker",
-      "args": ["run", "-i", "--rm", "pokeledger-mcp"]
+      "args": ["run", "-i", "--rm", "-v", "pokeledger-memory:/home/node/.pokeledger/keep-track", "pokeledger-mcp"]
     }
   }
 }
@@ -219,7 +222,7 @@ Ou dans un fichier `.mcp.json` :
 Construire d'abord l'image Docker (voir ci-dessus), puis l'ajouter à Codex :
 
 ```bash
-codex mcp add pokeledger -- docker run -i --rm pokeledger-mcp
+codex mcp add pokeledger -- docker run -i --rm -v pokeledger-memory:/home/node/.pokeledger/keep-track pokeledger-mcp
 ```
 
 Ou dans `~/.codex/config.toml` (`.codex/config.toml` pour un projet de
@@ -229,7 +232,7 @@ partagent cette configuration :
 ```toml
 [mcp_servers.pokeledger]
 command = "docker"
-args = ["run", "-i", "--rm", "pokeledger-mcp"]
+args = ["run", "-i", "--rm", "-v", "pokeledger-memory:/home/node/.pokeledger/keep-track", "pokeledger-mcp"]
 ```
 
 Pour utiliser un dossier de règles personnalisé :
@@ -237,7 +240,8 @@ Pour utiliser un dossier de règles personnalisé :
 ```toml
 [mcp_servers.pokeledger]
 command = "docker"
-args = ["run", "-i", "--rm", "-v", "/chemin/vers/mes-regles:/rules",
+args = ["run", "-i", "--rm", "-v", "pokeledger-memory:/home/node/.pokeledger/keep-track",
+        "-v", "/chemin/vers/mes-regles:/rules",
         "-e", "POKELEDGER_START_WORKFLOW_CONTEXT_DIR=/rules", "pokeledger-mcp"]
 ```
 
