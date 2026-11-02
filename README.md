@@ -53,7 +53,7 @@ séparés du code :
 | `terminology.md`          | Mots-clés BCP 14 et leur correspondance         |
 | `versioning.md`           | Cadence de versionnage                          |
 | `git-conventions.md`      | Conventions Git de l'équipe                     |
-| `tdd.md`                  | Workflow TDD et règle de couverture             |
+| `tdd.md`                  | Workflow TDD par tranches et qualité des tests  |
 | `decisions.md`            | Choix d'implémentation par l'opérateur          |
 | `comments.md`             | Langue des commentaires                         |
 | `server-instructions.md`  | Instructions envoyées au client à la connexion  |
