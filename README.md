@@ -217,6 +217,91 @@ Ou dans un fichier `.mcp.json` :
 }
 ```
 
+## Utilisation avec GitHub Copilot
+
+Construire d'abord l'image Docker (voir [Docker](#docker)).
+
+### Copilot CLI et VS Code
+
+Ajouter le serveur à la configuration utilisateur
+`~/.copilot/mcp-config.json`, lue par Copilot CLI et par les sessions Copilot de
+VS Code :
+
+```bash
+copilot mcp add pokeledger -- docker run -i --rm -v pokeledger-memory:/home/node/.pokeledger/keep-track pokeledger-mcp
+```
+
+Ou dans ce fichier, ou dans un fichier `.mcp.json` à la racine du projet :
+
+```json
+{
+  "mcpServers": {
+    "pokeledger": {
+      "type": "local",
+      "command": "docker",
+      "args": ["run", "-i", "--rm", "-v", "pokeledger-memory:/home/node/.pokeledger/keep-track", "pokeledger-mcp"],
+      "tools": ["*"]
+    }
+  }
+}
+```
+
+Dans VS Code, un `.mcp.json` à la racine n'est proposé que si le réglage
+expérimental `chat.mcp.workspaceRootConfig.enabled` est actif.
+
+VS Code accepte aussi son format historique, dans `.vscode/mcp.json`, avec un
+objet `servers` :
+
+```json
+{
+  "servers": {
+    "pokeledger": {
+      "type": "stdio",
+      "command": "docker",
+      "args": ["run", "-i", "--rm", "-v", "pokeledger-memory:/home/node/.pokeledger/keep-track", "pokeledger-mcp"]
+    }
+  }
+}
+```
+
+### Agent cloud Copilot
+
+Un administrateur du dépôt ajoute la configuration dans les réglages MCP du
+dépôt sur GitHub. La clé `tools` liste les outils autorisés ; cet exemple exclut
+`neuralyze`, qui ne pourrait effacer qu'une mémoire éphémère :
+
+```json
+{
+  "mcpServers": {
+    "pokeledger": {
+      "type": "local",
+      "command": "docker",
+      "args": ["run", "-i", "--rm", "pokeledger-mcp"],
+      "tools": ["ping", "start_workflow", "keep_track"]
+    }
+  }
+}
+```
+
+L'image n'étant pas publiée, il faut la construire dans
+`.github/workflows/copilot-setup-steps.yml`, un fichier qui DOIT être présent sur
+la branche par défaut :
+
+```yaml
+name: Copilot Setup Steps
+on: workflow_dispatch
+
+jobs:
+  copilot-setup-steps:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t pokeledger-mcp .
+```
+
+L'environnement de l'agent cloud est éphémère : un volume Docker n'y conserve
+pas la mémoire de `keep_track` d'une session à l'autre.
+
 ## Utilisation avec Codex (OpenAI)
 
 Construire d'abord l'image Docker (voir ci-dessus), puis l'ajouter à Codex :
