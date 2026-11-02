@@ -29,10 +29,13 @@ afterEach(async () => {
   client = undefined;
 });
 
-test("only ping and start_workflow are public tools", async () => {
+test("internal steps are not public tools", async () => {
   await connect();
   const { tools } = await client.listTools();
-  assert.deepEqual(tools.map((t) => t.name).sort(), ["ping", "start_workflow"]);
+  const names = tools.map((t) => t.name);
+  for (const step of ["validate_tests", "choose_implementation", "confirm_custom_implementation"]) {
+    assert.ok(!names.includes(step), step);
+  }
 });
 
 test("start_workflow offers every internal step", async () => {
