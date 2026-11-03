@@ -1,3 +1,4 @@
+import { askOperatorForm } from "../operator_form/index.js";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { DEFAULT_CONTEXT_DIR } from "./context.js";
@@ -29,7 +30,7 @@ function operatorForm(strings) {
 async function askOperator(server) {
   const strings = JSON.parse(readText("strings.json"));
   try {
-    const answer = await server.server.elicitInput({ message: readText("request.md"), requestedSchema: operatorForm(strings) });
+    const answer = await askOperatorForm(server, { message: readText("request.md"), requestedSchema: operatorForm(strings) });
     return answer.content?.autoVersioning;
   } catch {
     return undefined;
