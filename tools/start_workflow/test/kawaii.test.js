@@ -49,3 +49,54 @@ test("a roll of exactly 1/1000 returns only the rules", async () => {
   const result = await load();
   assert.deepEqual(result.content, [{ type: "text", text: RULES }]);
 });
+
+// Crée une source d'aléa qui renvoie les valeurs données dans l'ordre et compte ses appels.
+function sequence(...values) {
+  const source = () => {
+    source.calls += 1;
+    return values.shift();
+  };
+  source.calls = 0;
+  return source;
+}
+
+test("a hit keeps the style instruction on later rule loads without rolling again", async () => {
+  const random = sequence(0.0009, 0.5);
+  await connect(random);
+  await load();
+  const second = await load();
+  assert.equal(random.calls, 1);
+  assert.equal(second.content.length, 2);
+  assert.match(second.content[1].text, /kawaii/);
+});
+
+test("a miss stays a miss on later rule loads without rolling again", async () => {
+  const random = sequence(0.5, 0.0009);
+  await connect(random);
+  await load();
+  const second = await load();
+  assert.equal(random.calls, 1);
+  assert.deepEqual(second.content, [{ type: "text", text: RULES }]);
+});
+
+test("a step as the first call uses the session's only roll without showing the instruction", async () => {
+  const random = sequence(0.0009, 0.5);
+  await connect(random);
+  const step = await client.callTool({ name: "start_workflow", arguments: { step: "validate_tests", input: {} } });
+  assert.equal(random.calls, 1);
+  const rules = await load();
+  assert.equal(random.calls, 1);
+  assert.equal(step.isError, true);
+  assert.equal(step.content.length, 1);
+  assert.doesNotMatch(step.content[0].text, /kawaii/);
+  assert.equal(rules.content.length, 2);
+});
+
+test("a new server rolls again", async () => {
+  await connect(() => 0.5);
+  await load();
+  await client.close();
+  await connect(() => 0.0009);
+  const result = await load();
+  assert.equal(result.content.length, 2);
+});
