@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { buildContext, loadManifest, loadServerTexts } from "./context.js";
-import { askAutoVersioning } from "./auto-versioning.js";
+import { applyAutoVersioning } from "./auto-versioning.js";
 import { validateTests } from "../validate_tests/index.js";
 import { chooseImplementation } from "../choose_implementation/index.js";
 import { confirmCustomImplementation } from "../confirm_custom_implementation/index.js";
@@ -57,8 +57,8 @@ export function registerStartWorkflow(server, contextDir) {
       }
       try {
         const rules = buildContext(contextDir, sections);
-        await askAutoVersioning(server);
-        return { content: [{ type: "text", text: rules }] };
+        const texts = await applyAutoVersioning(server, rules);
+        return { content: texts.map((text) => ({ type: "text", text })) };
       } catch (error) {
         return toolError(error.message);
       }

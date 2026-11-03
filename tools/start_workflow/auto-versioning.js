@@ -25,12 +25,19 @@ function operatorForm(strings) {
   };
 }
 
-// Demande à l'opérateur si l'agent doit versionner automatiquement pendant cette session.
-export async function askAutoVersioning(server) {
+// Demande à l'opérateur si l'agent doit versionner automatiquement ; renvoie sa réponse, ou undefined s'il n'y en a pas.
+async function askOperator(server) {
   const strings = JSON.parse(readText("strings.json"));
   try {
-    await server.server.elicitInput({ message: readText("request.md"), requestedSchema: operatorForm(strings) });
+    const answer = await server.server.elicitInput({ message: readText("request.md"), requestedSchema: operatorForm(strings) });
+    return answer.content?.autoVersioning;
   } catch {
-    // Un client sans élicitation ne bloque pas le chargement des règles.
+    return undefined;
   }
+}
+
+// Interroge l'opérateur et renvoie les textes à transmettre à l'agent : les règles, précédées de l'avertissement en cas de refus.
+export async function applyAutoVersioning(server, rules) {
+  const answer = await askOperator(server);
+  return answer === "no" ? [readText("warning.md"), rules] : [rules];
 }
