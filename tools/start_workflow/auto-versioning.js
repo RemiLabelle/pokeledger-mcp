@@ -36,12 +36,20 @@ async function askOperator(server) {
   }
 }
 
-// Crée l'état d'une session : renvoie la fonction qui interroge l'opérateur une seule fois et donne les textes à transmettre à l'agent.
+// Choisit les textes à transmettre à l'agent selon la réponse de l'opérateur, qui peut être absente.
+function textsFor(answer, rules) {
+  if (answer === "no") {
+    return [readText("warning.md"), rules];
+  }
+  return answer === "yes" ? [rules] : [rules, readText("ask-in-conversation.md")];
+}
+
+// Crée l'état d'une session : renvoie la fonction qui interroge l'opérateur jusqu'à obtenir une réponse et donne les textes pour l'agent.
 export function createAutoVersioning(server) {
   let answer;
-  // Renvoie les règles, précédées de l'avertissement en cas de refus, en n'interrogeant l'opérateur que sans réponse conservée.
+  // Renvoie les textes pour l'agent en n'interrogeant l'opérateur que sans réponse conservée.
   return async function applyAutoVersioning(rules) {
     answer ??= await askOperator(server);
-    return answer === "no" ? [readText("warning.md"), rules] : [rules];
+    return textsFor(answer, rules);
   };
 }
