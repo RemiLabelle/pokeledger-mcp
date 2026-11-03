@@ -89,3 +89,34 @@ test("unknown sections do not ask the operator about auto versioning", async () 
   assert.equal(result.isError, true);
   assert.equal(questions.length, 0);
 });
+
+// Connecte un client de test incapable d'afficher un formulaire à l'opérateur.
+async function connectWithoutElicitation() {
+  const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
+  const server = createServer({ contextDir: FIXTURE });
+  client = new Client({ name: "test-client", version: "0.0.0" });
+  await Promise.all([server.connect(serverTransport), client.connect(clientTransport)]);
+}
+
+// Vérifie que le résultat contient les règles suivies de la consigne de demander à l'opérateur dans la conversation.
+function assertAsksInConversation(result) {
+  assert.equal(result.content.length, 2);
+  assert.deepEqual(result.content[0], { type: "text", text: RULES });
+  const notice = result.content[1].text.replace(/\s+/g, " ");
+  assert.match(notice, /L'agent DOIT demander à l'opérateur, dans la conversation/);
+  assert.match(notice, /`autoVersioning`/);
+}
+
+for (const action of ["decline", "cancel"]) {
+  test(`a form answered with ${action} tells the agent to ask in the conversation and asks again on the next load`, async () => {
+    await connect({ action });
+    assertAsksInConversation(await load());
+    assertAsksInConversation(await load());
+    assert.equal(questions.length, 2);
+  });
+}
+
+test("a client without elicitation tells the agent to ask in the conversation", async () => {
+  await connectWithoutElicitation();
+  assertAsksInConversation(await load());
+});
