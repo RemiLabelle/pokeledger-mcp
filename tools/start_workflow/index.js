@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { buildContext, loadManifest, loadServerTexts } from "./context.js";
+import { createAutoVersioning } from "./auto-versioning.js";
 import { validateTests } from "../validate_tests/index.js";
 import { chooseImplementation } from "../choose_implementation/index.js";
 import { confirmCustomImplementation } from "../confirm_custom_implementation/index.js";
@@ -33,6 +34,7 @@ async function runStep(server, name, input) {
 export function registerStartWorkflow(server, contextDir) {
   const { toolDescription } = loadServerTexts(contextDir);
   const sectionIds = loadManifest(contextDir).sections.map((s) => s.id);
+  const applyAutoVersioning = createAutoVersioning(server);
 
   server.registerTool(
     "start_workflow",
@@ -44,18 +46,24 @@ export function registerStartWorkflow(server, contextDir) {
           .array(z.string())
           .optional()
           .describe(`Section ids to return (all when omitted): ${sectionIds.join(", ")}`),
+        autoVersioning: z
+          .boolean()
+          .optional()
+          .describe("Answer given by the operator in the conversation about automatic versioning, only after the rules asked for it"),
         step: z.enum([...STEPS.keys()]).optional().describe(describeSteps()),
         input: z.record(z.string(), z.unknown()).optional().describe("Input of the step, as documented in `step`"),
       },
       annotations: { readOnlyHint: true, openWorldHint: false },
     },
     // Exécute l'étape demandée, sinon relit les fichiers de contexte pour que les modifications s'appliquent sans redémarrage.
-    async ({ sections, step, input }) => {
+    async ({ sections, autoVersioning, step, input }) => {
       if (step) {
         return runStep(server, step, input);
       }
       try {
-        return { content: [{ type: "text", text: buildContext(contextDir, sections) }] };
+        const rules = buildContext(contextDir, sections);
+        const texts = await applyAutoVersioning(rules, autoVersioning);
+        return { content: texts.map((text) => ({ type: "text", text })) };
       } catch (error) {
         return toolError(error.message);
       }
