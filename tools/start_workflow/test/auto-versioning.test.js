@@ -120,3 +120,36 @@ test("a client without elicitation tells the agent to ask in the conversation", 
   await connectWithoutElicitation();
   assertAsksInConversation(await load());
 });
+
+test("the tool publishes an optional autoVersioning boolean", async () => {
+  await connect({ action: "decline" });
+  const { tools } = await client.listTools();
+  const { inputSchema } = tools.find((t) => t.name === "start_workflow");
+  assert.equal(inputSchema.properties.autoVersioning.type, "boolean");
+  assert.ok(!inputSchema.required?.includes("autoVersioning"));
+});
+
+test("autoVersioning false records a no without opening the form", async () => {
+  await connect({ action: "decline" });
+  const first = await load({ autoVersioning: false });
+  const second = await load();
+  assert.equal(questions.length, 0);
+  assert.match(first.content[0].text, /AVERTISSEMENT MAJEUR/);
+  assert.match(second.content[0].text, /AVERTISSEMENT MAJEUR/);
+});
+
+test("autoVersioning true records a yes without opening the form", async () => {
+  await connect({ action: "decline" });
+  const first = await load({ autoVersioning: true });
+  const second = await load();
+  assert.equal(questions.length, 0);
+  assert.deepEqual(first.content, [{ type: "text", text: RULES }]);
+  assert.deepEqual(second.content, [{ type: "text", text: RULES }]);
+});
+
+test("autoVersioning does not override a no already given in the form", async () => {
+  await connect({ action: "accept", content: { autoVersioning: "no" } });
+  await load();
+  const result = await load({ autoVersioning: true });
+  assert.match(result.content[0].text, /AVERTISSEMENT MAJEUR/);
+});
