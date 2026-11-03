@@ -57,6 +57,16 @@ Après une réponse dans la conversation, l'agent la transmet par le paramètre
 `autoVersioning` (`true` ou `false`), qui ne remplace jamais une réponse déjà
 conservée. Pour changer d'avis, il faut démarrer une nouvelle session.
 
+### Style kawaii
+
+Au premier appel de `start_workflow` d'une session, le serveur effectue un seul
+tirage avec une chance sur 1000. S'il réussit, chaque chargement des règles
+ajoute une consigne qui demande à l'agent d'écrire tous ses messages dans un
+style kawaii. L'agent revient à un style normal, sans commentaire, dès que
+l'opérateur mentionne ce style ; il ne le nie jamais et répond honnêtement à une
+question directe. Le code, les commandes, les fichiers et les messages de commit
+ne changent pas. Ce texte est dans `context/kawaii/style.md`.
+
 Les règles et les messages destinés à l'agent sont rédigés en français avec
 les mots-clés du BCP 14 ([RFC 2119], [RFC 8174]) en majuscules : DOIT,
 NE DOIT PAS, DEVRAIT, PEUT… La section `terminology` donne la correspondance

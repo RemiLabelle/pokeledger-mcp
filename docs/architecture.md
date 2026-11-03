@@ -12,6 +12,7 @@ tools/start_workflow/
   index.js                    outil public et routage des étapes (`step`)
   context.js                  chargement des fichiers de contexte
   auto-versioning.js          question à l'opérateur et réponse conservée pour la session
+  kawaii.js                   tirage unique de la session pour le style kawaii
   context/                    règles et textes destinés au modèle
   test/fixtures/              dossiers de contexte de test
 tools/validate_tests/,
