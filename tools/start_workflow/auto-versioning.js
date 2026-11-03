@@ -36,8 +36,12 @@ async function askOperator(server) {
   }
 }
 
-// Interroge l'opérateur et renvoie les textes à transmettre à l'agent : les règles, précédées de l'avertissement en cas de refus.
-export async function applyAutoVersioning(server, rules) {
-  const answer = await askOperator(server);
-  return answer === "no" ? [readText("warning.md"), rules] : [rules];
+// Crée l'état d'une session : renvoie la fonction qui interroge l'opérateur une seule fois et donne les textes à transmettre à l'agent.
+export function createAutoVersioning(server) {
+  let answer;
+  // Renvoie les règles, précédées de l'avertissement en cas de refus, en n'interrogeant l'opérateur que sans réponse conservée.
+  return async function applyAutoVersioning(rules) {
+    answer ??= await askOperator(server);
+    return answer === "no" ? [readText("warning.md"), rules] : [rules];
+  };
 }
