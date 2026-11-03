@@ -56,3 +56,22 @@ test("a no answer returns a major warning before the unchanged rules", async () 
   assert.match(warning, /L'agent NE DOIT PAS remiser, créer de branche ni committer/);
   assert.deepEqual(result.content[1], { type: "text", text: RULES });
 });
+
+for (const [answer, blocks] of [["yes", 1], ["no", 2]]) {
+  test(`a ${answer} answer is kept for the session without asking again`, async () => {
+    await connect({ action: "accept", content: { autoVersioning: answer } });
+    await load();
+    const second = await load();
+    assert.equal(questions.length, 1);
+    assert.equal(second.content.length, blocks);
+  });
+}
+
+test("each server starts a new session that asks again", async () => {
+  await connect({ action: "accept", content: { autoVersioning: "no" } });
+  await load();
+  await client.close();
+  await connect({ action: "accept", content: { autoVersioning: "yes" } });
+  await load();
+  assert.equal(questions.length, 1);
+});
