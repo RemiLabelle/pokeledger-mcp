@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { buildContext, loadManifest, loadServerTexts } from "./context.js";
+import { askAutoVersioning } from "./auto-versioning.js";
 import { validateTests } from "../validate_tests/index.js";
 import { chooseImplementation } from "../choose_implementation/index.js";
 import { confirmCustomImplementation } from "../confirm_custom_implementation/index.js";
@@ -55,7 +56,9 @@ export function registerStartWorkflow(server, contextDir) {
         return runStep(server, step, input);
       }
       try {
-        return { content: [{ type: "text", text: buildContext(contextDir, sections) }] };
+        const rules = buildContext(contextDir, sections);
+        await askAutoVersioning(server);
+        return { content: [{ type: "text", text: rules }] };
       } catch (error) {
         return toolError(error.message);
       }
