@@ -23,6 +23,8 @@ tools/keep_track/
   index.js                    outil public et actions sur la mémoire
   memory-store.js             lecture, écriture et effacement de `memory.json`
   context/                    description de l'outil
+tools/operator_form/
+  index.js                    ouverture des formulaires, avec le délai de réponse de l'opérateur
 tools/neuralyze/
   index.js                    outil public d'effacement de la mémoire
   context/                    description et formulaire de confirmation
@@ -88,7 +90,7 @@ export const validateTests = {
 ```
 
 `run` construit le message à partir des gabarits, ouvre le formulaire de
-l'opérateur par élicitation MCP (`server.server.elicitInput`), puis traduit
+l'opérateur par élicitation MCP (`askOperatorForm`), puis traduit
 la réponse en résultat : un texte de consigne pour l'agent (`content`) et un
 état exploitable par programme (`structuredContent.status`). Les fonctions
 d'aide (`operatorForm`, `reply`, `bullets`) restent privées au module.
