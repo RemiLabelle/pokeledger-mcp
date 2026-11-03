@@ -44,12 +44,20 @@ function textsFor(answer, rules) {
   return answer === "yes" ? [rules] : [rules, readText("ask-in-conversation.md")];
 }
 
+// Traduit le paramètre autoVersioning en réponse de l'opérateur ; renvoie undefined s'il est absent.
+function fromParameter(autoVersioning) {
+  if (autoVersioning === undefined) {
+    return undefined;
+  }
+  return autoVersioning ? "yes" : "no";
+}
+
 // Crée l'état d'une session : renvoie la fonction qui interroge l'opérateur jusqu'à obtenir une réponse et donne les textes pour l'agent.
 export function createAutoVersioning(server) {
   let answer;
-  // Renvoie les textes pour l'agent en n'interrogeant l'opérateur que sans réponse conservée.
-  return async function applyAutoVersioning(rules) {
-    answer ??= await askOperator(server);
+  // Renvoie les textes pour l'agent ; une réponse conservée prime sur le paramètre, qui évite lui-même le formulaire.
+  return async function applyAutoVersioning(rules, autoVersioning) {
+    answer ??= fromParameter(autoVersioning) ?? (await askOperator(server));
     return textsFor(answer, rules);
   };
 }

@@ -46,19 +46,23 @@ export function registerStartWorkflow(server, contextDir) {
           .array(z.string())
           .optional()
           .describe(`Section ids to return (all when omitted): ${sectionIds.join(", ")}`),
+        autoVersioning: z
+          .boolean()
+          .optional()
+          .describe("Answer given by the operator in the conversation about automatic versioning, only after the rules asked for it"),
         step: z.enum([...STEPS.keys()]).optional().describe(describeSteps()),
         input: z.record(z.string(), z.unknown()).optional().describe("Input of the step, as documented in `step`"),
       },
       annotations: { readOnlyHint: true, openWorldHint: false },
     },
     // Exécute l'étape demandée, sinon relit les fichiers de contexte pour que les modifications s'appliquent sans redémarrage.
-    async ({ sections, step, input }) => {
+    async ({ sections, autoVersioning, step, input }) => {
       if (step) {
         return runStep(server, step, input);
       }
       try {
         const rules = buildContext(contextDir, sections);
-        const texts = await applyAutoVersioning(rules);
+        const texts = await applyAutoVersioning(rules, autoVersioning);
         return { content: texts.map((text) => ({ type: "text", text })) };
       } catch (error) {
         return toolError(error.message);
