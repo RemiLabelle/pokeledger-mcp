@@ -17,7 +17,7 @@ let questions;
 // Connecte un client de test dont l'opérateur simulé répond toujours par reply ; les questions reçues sont conservées.
 async function connect(reply) {
   const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
-  const server = createServer({ contextDir: FIXTURE });
+  const server = createServer({ contextDir: FIXTURE, random: () => 1 });
   questions = [];
   client = new Client({ name: "test-client", version: "0.0.0" }, { capabilities: { elicitation: { form: {} } } });
   client.setRequestHandler(ElicitRequestSchema, async (request) => {
@@ -93,7 +93,7 @@ test("unknown sections do not ask the operator about auto versioning", async () 
 // Connecte un client de test incapable d'afficher un formulaire à l'opérateur.
 async function connectWithoutElicitation() {
   const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
-  const server = createServer({ contextDir: FIXTURE });
+  const server = createServer({ contextDir: FIXTURE, random: () => 1 });
   client = new Client({ name: "test-client", version: "0.0.0" });
   await Promise.all([server.connect(serverTransport), client.connect(clientTransport)]);
 }
