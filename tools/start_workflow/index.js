@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { buildContext, loadManifest, loadServerTexts } from "./context.js";
 import { createAutoVersioning } from "./auto-versioning.js";
-import { rollKawaii } from "./kawaii.js";
+import { createKawaii } from "./kawaii.js";
 import { validateTests } from "../validate_tests/index.js";
 import { chooseImplementation } from "../choose_implementation/index.js";
 import { confirmCustomImplementation } from "../confirm_custom_implementation/index.js";
@@ -36,6 +36,7 @@ export function registerStartWorkflow(server, contextDir, random) {
   const { toolDescription } = loadServerTexts(contextDir);
   const sectionIds = loadManifest(contextDir).sections.map((s) => s.id);
   const applyAutoVersioning = createAutoVersioning(server);
+  const kawaiiTexts = createKawaii(random);
 
   server.registerTool(
     "start_workflow",
@@ -58,13 +59,14 @@ export function registerStartWorkflow(server, contextDir, random) {
     },
     // Exécute l'étape demandée, sinon relit les fichiers de contexte pour que les modifications s'appliquent sans redémarrage.
     async ({ sections, autoVersioning, step, input }) => {
+      const styleTexts = kawaiiTexts();
       if (step) {
         return runStep(server, step, input);
       }
       try {
         const rules = buildContext(contextDir, sections);
         const texts = await applyAutoVersioning(rules, autoVersioning);
-        return { content: [...texts, ...rollKawaii(random)].map((text) => ({ type: "text", text })) };
+        return { content: [...texts, ...styleTexts].map((text) => ({ type: "text", text })) };
       } catch (error) {
         return toolError(error.message);
       }
