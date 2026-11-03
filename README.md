@@ -40,6 +40,23 @@ demandent d'appeler cet outil avant de commencer. Le paramètre optionnel
 `sections` (`terminology`, `versioning`, `git`, `tdd`, `decisions`,
 `comments`) limite la réponse.
 
+### Versionnage automatique
+
+Au premier chargement des règles d'une session, `start_workflow` demande à
+l'opérateur, par élicitation MCP, si l'agent doit versionner automatiquement
+selon le workflow défini. La réponse est conservée pour la session, c'est-à-dire
+pour la durée de vie du serveur.
+
+| Réponse     | Résultat                                                                                  |
+| ----------- | ----------------------------------------------------------------------------------------- |
+| Oui         | Les règles, sans changement                                                               |
+| Non         | Un **avertissement majeur**, puis les règles : l'opérateur est responsable des conventions Git et l'agent ne remise, ne crée de branche ni ne committe |
+| Aucune      | Les règles, puis la consigne de poser la question dans la conversation ; le formulaire est reproposé au chargement suivant |
+
+Après une réponse dans la conversation, l'agent la transmet par le paramètre
+`autoVersioning` (`true` ou `false`), qui ne remplace jamais une réponse déjà
+conservée. Pour changer d'avis, il faut démarrer une nouvelle session.
+
 Les règles et les messages destinés à l'agent sont rédigés en français avec
 les mots-clés du BCP 14 ([RFC 2119], [RFC 8174]) en majuscules : DOIT,
 NE DOIT PAS, DEVRAIT, PEUT… La section `terminology` donne la correspondance
@@ -105,8 +122,9 @@ docker run -i --rm -v pokeledger-memory:/home/node/.pokeledger/keep-track pokele
 
 ## Formulaires de l'opérateur
 
-`validate_tests`, `choose_implementation`, `confirm_custom_implementation` et
-`neuralyze` questionnent l'opérateur par élicitation MCP. Tous les clients
+`start_workflow` (versionnage automatique), `validate_tests`,
+`choose_implementation`, `confirm_custom_implementation` et `neuralyze`
+questionnent l'opérateur par élicitation MCP. Tous les clients
 n'affichent pas ces formulaires : l'onglet Code de l'application de bureau
 Claude exécute Claude Code en mode *print*, qui les refuse automatiquement sans
 les montrer. Le serveur ne peut pas distinguer ce refus de celui d'une personne.

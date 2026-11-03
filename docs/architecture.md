@@ -11,6 +11,7 @@ tools/<outil>/                un dossier par outil ou étape interne
 tools/start_workflow/
   index.js                    outil public et routage des étapes (`step`)
   context.js                  chargement des fichiers de contexte
+  auto-versioning.js          question à l'opérateur et réponse conservée pour la session
   context/                    règles et textes destinés au modèle
   test/fixtures/              dossiers de contexte de test
 tools/validate_tests/,
@@ -102,7 +103,10 @@ outils publics, sans étape interne :
 2. `registerTool("start_workflow", …)` déclare le schéma public : `sections`,
    `step` (énumération des noms de `STEPS`, dont la description concatène la
    documentation de chaque étape) et `input` ;
-3. à l'appel, sans `step`, l'outil renvoie les règles (`buildContext`) ; avec
+3. à l'appel, sans `step`, l'outil renvoie les règles (`buildContext`), avec les
+   textes du versionnage automatique (`createAutoVersioning`, un état par
+   serveur, textes dans `context/auto-versioning/`, non remplaçables par
+   `POKELEDGER_START_WORKFLOW_CONTEXT_DIR`) ; avec
    `step`, `runStep` valide `input` contre l'`inputSchema` de l'étape et
    renvoie une erreur lisible (`isError`) sans solliciter l'opérateur si
    l'entrée est invalide, sinon appelle `run`.
