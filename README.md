@@ -38,7 +38,16 @@ co-auteur, sans jamais pousser), conventions Git,
 workflow TDD et commentaires en français. Les instructions du serveur lui
 demandent d'appeler cet outil avant de commencer. Le paramètre optionnel
 `sections` (`terminology`, `versioning`, `git`, `tdd`, `decisions`, `forms`,
-`comments`) limite la réponse.
+`skills`, `comments`) limite la réponse.
+
+### Skill `devops`
+
+La section `skills` oblige l'agent à charger le skill `devops` avant toute
+modification lorsqu'une tâche touche les conteneurs, la CI/CD, Kubernetes,
+Cloudflare, Google Cloud ou la sécurité de l'infrastructure. Le serveur ne contient
+pas ce skill : il s'installe dans le projet du client avec `tessl install`. Le
+charger n'autorise ni déploiement, ni changement d'infrastructure, ni exécution de
+ses scripts sans demande explicite de l'opérateur.
 
 ### Versionnage automatique
 
