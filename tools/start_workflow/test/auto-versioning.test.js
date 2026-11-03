@@ -75,3 +75,17 @@ test("each server starts a new session that asks again", async () => {
   await load();
   assert.equal(questions.length, 1);
 });
+
+test("a workflow step does not ask the operator about auto versioning", async () => {
+  await connect({ action: "accept", content: { autoVersioning: "yes" } });
+  const result = await load({ step: "validate_tests", input: {} });
+  assert.equal(result.isError, true);
+  assert.equal(questions.length, 0);
+});
+
+test("unknown sections do not ask the operator about auto versioning", async () => {
+  await connect({ action: "accept", content: { autoVersioning: "yes" } });
+  const result = await load({ sections: ["zzz"] });
+  assert.equal(result.isError, true);
+  assert.equal(questions.length, 0);
+});
