@@ -45,3 +45,14 @@ test("loading the rules asks the operator a yes or no question and a yes returns
   assert.deepEqual(questions[0].requestedSchema.properties.autoVersioning.enum, ["yes", "no"]);
   assert.deepEqual(result.content, [{ type: "text", text: RULES }]);
 });
+
+test("a no answer returns a major warning before the unchanged rules", async () => {
+  await connect({ action: "accept", content: { autoVersioning: "no" } });
+  const result = await load();
+  assert.equal(result.content.length, 2);
+  const warning = result.content[0].text.replace(/\s+/g, " ");
+  assert.match(warning, /AVERTISSEMENT MAJEUR/);
+  assert.match(warning, /dans cette session, l'opérateur est responsable du respect des conventions Git/i);
+  assert.match(warning, /L'agent NE DOIT PAS remiser, créer de branche ni committer/);
+  assert.deepEqual(result.content[1], { type: "text", text: RULES });
+});
