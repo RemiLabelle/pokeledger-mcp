@@ -44,10 +44,23 @@ demandent d'appeler cet outil avant de commencer. Le paramètre optionnel
 
 La section `skills` oblige l'agent à charger le skill `devops` avant toute
 modification lorsqu'une tâche touche les conteneurs, la CI/CD, Kubernetes,
-Cloudflare, Google Cloud ou la sécurité de l'infrastructure. Le serveur ne contient
-pas ce skill : il s'installe dans le projet du client avec `tessl install`. Le
-charger n'autorise ni déploiement, ni changement d'infrastructure, ni exécution de
-ses scripts sans demande explicite de l'opérateur.
+Cloudflare, Google Cloud ou la sécurité de l'infrastructure. Le charger n'autorise
+ni déploiement, ni changement d'infrastructure, ni exécution de scripts sans
+demande explicite de l'opérateur.
+
+Le serveur fournit ce skill par l'outil public `devops` :
+
+| Appel                              | Résultat                                                                   |
+| ---------------------------------- | -------------------------------------------------------------------------- |
+| `devops({})`                       | Le skill ; l'agent l'applique sans notifier l'opérateur                     |
+| `devops({ trigger: "automatic" })` | Le skill ; l'agent affiche « Le skill devops guide le travail actuel. »     |
+| `devops({ reference: "<nom>" })`   | Une des 21 références du skill, par exemple `docker-basics`                 |
+
+Le serveur ne voit pas qui a demandé l'appel : le mode repose sur l'agent, qui suit
+les règles de `start_workflow`. Le skill provient de
+[`mrgoonie/claudekit-skills`](https://github.com/mrgoonie/claudekit-skills/tree/80113d86bc4407f105af40a2c4ea58194f7c370a/.claude/skills/devops)
+(licence MIT déclarée dans son `SKILL.md`, révision `80113d8`). Il est copié sans ses
+scripts dans `tools/devops/context/skill/`.
 
 ### Versionnage automatique
 

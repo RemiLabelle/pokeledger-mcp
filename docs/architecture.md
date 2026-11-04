@@ -29,6 +29,10 @@ tools/operator_form/
 tools/neuralyze/
   index.js                    outil public d'effacement de la mémoire
   context/                    description et formulaire de confirmation
+tools/devops/
+  index.js                    outil public qui renvoie le skill ou une référence
+  context/                    consignes d'usage et description de l'outil
+  context/skill/              copie du skill externe et de ses références
 ```
 
 ## Du code à l'exposition publique
@@ -99,8 +103,8 @@ d'aide (`operatorForm`, `reply`, `bullets`) restent privées au module.
 ### 4. Outil public — `tools/start_workflow/index.js`
 
 `registerStartWorkflow` transforme les étapes internes en outil MCP.
-`registerPing`, `registerKeepTrack` et `registerNeuralyze` déclarent les autres
-outils publics, sans étape interne :
+`registerPing`, `registerKeepTrack`, `registerNeuralyze` et `registerDevops`
+déclarent les autres outils publics, sans étape interne :
 
 1. la table `STEPS` réunit les objets étape par leur `name` ;
 2. `registerTool("start_workflow", …)` déclare le schéma public : `sections`,
@@ -121,11 +125,12 @@ par `start_workflow`.
 
 - `createServer` crée le `McpServer` avec les instructions issues du contexte
   et enregistre uniquement les outils publics (`registerPing`,
-  `registerStartWorkflow`, `registerKeepTrack`, `registerNeuralyze`). C'est le
-  point d'entrée des tests, qui s'y connectent par `InMemoryTransport`.
+  `registerStartWorkflow`, `registerKeepTrack`, `registerNeuralyze`,
+  `registerDevops`). C'est le point d'entrée des tests, qui s'y connectent par
+  `InMemoryTransport`.
 - `src/index.js` relie ce serveur au transport stdio ; l'image Docker lance
   ce fichier. Les clients MCP voient alors `ping`, `start_workflow`,
-  `keep_track` et `neuralyze`.
+  `keep_track`, `neuralyze` et `devops`.
 
 ### Ajouter une étape interne
 
