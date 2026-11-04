@@ -37,8 +37,17 @@ tâche de code : versionnage local après chaque unité sémantique (sans
 co-auteur, sans jamais pousser), conventions Git,
 workflow TDD et commentaires en français. Les instructions du serveur lui
 demandent d'appeler cet outil avant de commencer. Le paramètre optionnel
-`sections` (`terminology`, `versioning`, `git`, `tdd`, `decisions`,
-`comments`) limite la réponse.
+`sections` (`terminology`, `versioning`, `git`, `tdd`, `decisions`, `forms`,
+`skills`, `comments`) limite la réponse.
+
+### Skill `devops`
+
+La section `skills` oblige l'agent à charger le skill `devops` avant toute
+modification lorsqu'une tâche touche les conteneurs, la CI/CD, Kubernetes,
+Cloudflare, Google Cloud ou la sécurité de l'infrastructure. Le serveur ne contient
+pas ce skill : il s'installe dans le projet du client avec `tessl install`. Le
+charger n'autorise ni déploiement, ni changement d'infrastructure, ni exécution de
+ses scripts sans demande explicite de l'opérateur.
 
 ### Versionnage automatique
 
@@ -128,6 +137,12 @@ questionnent l'opérateur par élicitation MCP. Tous les clients
 n'affichent pas ces formulaires : l'onglet Code de l'application de bureau
 Claude exécute Claude Code en mode *print*, qui les refuse automatiquement sans
 les montrer. Le serveur ne peut pas distinguer ce refus de celui d'une personne.
+
+Un formulaire laisse une heure à l'opérateur (`tools/operator_form/`), au lieu des
+60 secondes par défaut du SDK, au-delà desquelles sa réponse serait perdue. La
+section `forms` des règles indique à l'agent comment traiter chaque réponse :
+`decline` reste un refus valide, confirmé une seule fois dans la conversation ;
+`cancel` et `unavailable` l'obligent à poser la question dans la conversation.
 
 Le résultat structuré (`structuredContent`) contient donc toujours les consignes
 (`instructions`) et, si le formulaire n'est pas accepté, la réponse du client

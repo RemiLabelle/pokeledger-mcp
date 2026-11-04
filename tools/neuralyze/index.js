@@ -1,3 +1,4 @@
+import { askOperatorForm } from "../operator_form/index.js";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -42,7 +43,7 @@ export function registerNeuralyze(server, memoryDir) {
       const message = readText("request.md").replace("{{count}}", removed);
       let answer;
       try {
-        answer = await server.server.elicitInput({ message, requestedSchema: confirmationForm(strings) });
+        answer = await askOperatorForm(server, { message, requestedSchema: confirmationForm(strings) });
       } catch (error) {
         return reply({ status: "unavailable", reason: error.message, instructions: readText("not-confirmed.md") });
       }
