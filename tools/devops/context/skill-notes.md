@@ -1,0 +1,1 @@
+Pour lire une référence citée par ce skill, l'agent DOIT rappeler cet outil avec le paramètre `reference`, en donnant le nom du fichier sans son extension (par exemple `docker-basics`). Les scripts cités par ce skill ne sont pas fournis.
