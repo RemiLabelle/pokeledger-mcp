@@ -43,16 +43,16 @@ test("server instructions come from the context files", async () => {
   assert.equal(client.getInstructions(), "Fixture instructions.");
 });
 
-test("calling without arguments returns the full context", async () => {
+test("calling without arguments returns the full context first", async () => {
   await connect({ contextDir: FIXTURE });
   const result = await client.callTool({ name: TOOL, arguments: {} });
-  assert.deepEqual(result.content, [{ type: "text", text: buildContext(FIXTURE) }]);
+  assert.deepEqual(result.content[0], { type: "text", text: buildContext(FIXTURE) });
 });
 
-test("calling with sections returns only those sections", async () => {
+test("calling with sections returns only those sections first", async () => {
   await connect({ contextDir: FIXTURE });
   const result = await client.callTool({ name: TOOL, arguments: { sections: ["beta"] } });
-  assert.deepEqual(result.content, [{ type: "text", text: "# Beta\n\nBeta rule." }]);
+  assert.deepEqual(result.content[0], { type: "text", text: "# Beta\n\nBeta rule." });
 });
 
 test("unknown sections return a tool error instead of throwing", async () => {

@@ -5,7 +5,7 @@ distribué sous forme d'image **Docker**.
 
 ## Outils
 
-Quatre outils sont publics :
+Neuf outils sont publics :
 
 | Outil            | Description                                                                         |
 | ---------------- | ----------------------------------------------------------------------------------- |
@@ -13,6 +13,11 @@ Quatre outils sont publics :
 | `start_workflow` | Renvoie les règles de travail de l'agent (ci-dessous) et exécute les étapes internes. |
 | `keep_track`     | Conserve entre les sessions ce que l'agent apprend de l'opérateur.                  |
 | `neuralyze`      | Efface toute la mémoire de `keep_track`, après confirmation de l'opérateur.         |
+| `handoff`        | Produit un document de passation à partir de la mémoire de `keep_track`.            |
+| `devops`         | Renvoie le skill devops ou l'une de ses références.                                 |
+| `review_back`    | Renvoie les consignes de revue d'un changement backend.                             |
+| `review_front`   | Renvoie les consignes de revue d'un changement frontend.                            |
+| `transcribe`     | Transcrit un fichier mp3 choisi par l'opérateur, avec ElevenLabs.                   |
 
 Les étapes internes ne sont pas listées comme outils ; l'agent les lance par
 `start_workflow` avec `step` et `input` :
@@ -37,8 +42,73 @@ tâche de code : versionnage local après chaque unité sémantique (sans
 co-auteur, sans jamais pousser), conventions Git,
 workflow TDD et commentaires en français. Les instructions du serveur lui
 demandent d'appeler cet outil avant de commencer. Le paramètre optionnel
-`sections` (`terminology`, `versioning`, `git`, `tdd`, `decisions`,
+`sections` (`terminology`, `versioning`, `git`, `tdd`, `governance`,
+`decisions`, `forms`, `documentation`, `subagents`, `skills`, `communication`,
 `comments`) limite la réponse.
+
+### Skills intégrés aux règles
+
+Plusieurs skills publics du registre [Tessl](https://tessl.io/registry) sont
+adaptés en règles françaises. Chaque fichier cite sa source. Quand un skill
+contredisait les règles existantes, l'opérateur a tranché ; le tableau indique
+ce qui a été retenu.
+
+| Section ou texte | Skills | Ce qui a été adapté |
+| ---------------- | ------ | ------------------- |
+| `governance` | guv | Contrôle en sept points avant toute modification ; « ne rien changer » est un résultat valide. Le plus petit changement sûr devient la première option de `choose_implementation`. |
+| `subagents` | subagent-driven-development | Un sous-agent implémenteur par tâche, soumis au workflow TDD et à `validate_tests`. La revue de qualité passe par `review_back` ou `review_front`. Pas de worktree. |
+| `communication` | caveman | Style compressé (`full` par défaut) dans les réponses de la conversation seulement. Le code, les commits, la documentation et les formulaires restent en prose normale. |
+| `documentation` | markdown-authoring, mermaid-diagrams, deep-research, content-fix, humaniser | Trois étapes dans l'ordre : rédaction, correction du contenu (sans push ni co-auteur), puis humanisation du `README` seulement. |
+| Skill de développement | software-design-principles, headless-architecture, simple-typescript, api-idempotency | Une base commune (principes de conception, cœur et vue passive) et une surcouche backend (style TypeScript fonctionnel, idempotence des POST). Elles remplacent l'ancienne règle « abstraction d'abord ». |
+
+### Skill `devops`
+
+La section `skills` oblige l'agent à charger le skill `devops` avant toute
+modification lorsqu'une tâche touche les conteneurs, la CI/CD, Kubernetes,
+Cloudflare, Google Cloud ou la sécurité de l'infrastructure. Le charger n'autorise
+ni déploiement, ni changement d'infrastructure, ni exécution de scripts sans
+demande explicite de l'opérateur.
+
+Le serveur fournit ce skill par l'outil public `devops` :
+
+| Appel                              | Résultat                                                                   |
+| ---------------------------------- | -------------------------------------------------------------------------- |
+| `devops({})`                       | Le skill ; l'agent l'applique sans notifier l'opérateur                     |
+| `devops({ trigger: "automatic" })` | Le skill ; l'agent affiche « Le skill devops guide le travail actuel. »     |
+| `devops({ reference: "<nom>" })`   | Une des 21 références du skill, par exemple `docker-basics`                 |
+
+Le serveur ne voit pas qui a demandé l'appel : le mode repose sur l'agent, qui suit
+les règles de `start_workflow`. Le skill provient de
+[`mrgoonie/claudekit-skills`](https://github.com/mrgoonie/claudekit-skills/tree/80113d86bc4407f105af40a2c4ea58194f7c370a/.claude/skills/devops)
+(licence MIT déclarée dans son `SKILL.md`, révision `80113d8`). Il est copié sans ses
+scripts dans `tools/devops/context/skill/`.
+
+### Versionnage automatique
+
+Au premier chargement des règles d'une session, `start_workflow` demande à
+l'opérateur, par élicitation MCP, si l'agent doit versionner automatiquement
+selon le workflow défini. La réponse est conservée pour la session, c'est-à-dire
+pour la durée de vie du serveur.
+
+| Réponse     | Résultat                                                                                  |
+| ----------- | ----------------------------------------------------------------------------------------- |
+| Oui         | Les règles, sans changement                                                               |
+| Non         | Un **avertissement majeur**, puis les règles : l'opérateur est responsable des conventions Git et l'agent ne remise, ne crée de branche ni ne committe |
+| Aucune      | Les règles, puis la consigne de poser la question dans la conversation ; le formulaire est reproposé au chargement suivant |
+
+Après une réponse dans la conversation, l'agent la transmet par le paramètre
+`autoVersioning` (`true` ou `false`), qui ne remplace jamais une réponse déjà
+conservée. Pour changer d'avis, il faut démarrer une nouvelle session.
+
+### Style kawaii
+
+Au premier appel de `start_workflow` d'une session, le serveur effectue un seul
+tirage avec une chance sur 1000. S'il réussit, chaque chargement des règles
+ajoute une consigne qui demande à l'agent d'écrire tous ses messages dans un
+style kawaii. L'agent revient à un style normal, sans commentaire, dès que
+l'opérateur mentionne ce style ; il ne le nie jamais et répond honnêtement à une
+question directe. Le code, les commandes, les fichiers et les messages de commit
+ne changent pas. Ce texte est dans `context/kawaii/style.md`.
 
 Les règles et les messages destinés à l'agent sont rédigés en français avec
 les mots-clés du BCP 14 ([RFC 2119], [RFC 8174]) en majuscules : DOIT,
@@ -56,7 +126,13 @@ séparés du code :
 | `versioning.md`           | Cadence de versionnage                          |
 | `git-conventions.md`      | Conventions Git de l'équipe                     |
 | `tdd.md`                  | Workflow TDD par tranches et qualité des tests  |
+| `governance.md`           | Contrôle de gouvernance avant une modification  |
 | `decisions.md`            | Choix d'implémentation par l'opérateur          |
+| `forms.md`                | Traitement des réponses aux formulaires         |
+| `documentation.md`        | Rédaction, correction et humanisation des docs  |
+| `subagents.md`            | Développement par sous-agents                   |
+| `skills.md`               | Skills à charger et outils de revue             |
+| `communication.md`        | Style compressé des réponses                    |
 | `comments.md`             | Langue des commentaires                         |
 | `server-instructions.md`  | Instructions envoyées au client à la connexion  |
 | `tool-description.md`     | Description de l'outil vue par le modèle        |
@@ -105,11 +181,18 @@ docker run -i --rm -v pokeledger-memory:/home/node/.pokeledger/keep-track pokele
 
 ## Formulaires de l'opérateur
 
-`validate_tests`, `choose_implementation`, `confirm_custom_implementation` et
-`neuralyze` questionnent l'opérateur par élicitation MCP. Tous les clients
+`start_workflow` (versionnage automatique), `validate_tests`,
+`choose_implementation`, `confirm_custom_implementation`, `neuralyze` et
+`transcribe` questionnent l'opérateur par élicitation MCP. Tous les clients
 n'affichent pas ces formulaires : l'onglet Code de l'application de bureau
 Claude exécute Claude Code en mode *print*, qui les refuse automatiquement sans
 les montrer. Le serveur ne peut pas distinguer ce refus de celui d'une personne.
+
+Un formulaire laisse une heure à l'opérateur (`tools/operator_form/`), au lieu des
+60 secondes par défaut du SDK, au-delà desquelles sa réponse serait perdue. La
+section `forms` des règles indique à l'agent comment traiter chaque réponse :
+`decline` reste un refus valide, confirmé une seule fois dans la conversation ;
+`cancel` et `unavailable` l'obligent à poser la question dans la conversation.
 
 Le résultat structuré (`structuredContent`) contient donc toujours les consignes
 (`instructions`) et, si le formulaire n'est pas accepté, la réponse du client
@@ -137,8 +220,10 @@ changer. L'étape renvoie un `status` :
 
 Avec `validated`, l'étape renvoie aussi le **skill de développement**
 (`tools/validate_tests/context/development-skill.md`) dans un second bloc de
-texte : abstraction privilégiée, principes SOLID et patrons de conception
-identifiables par les noms de fichiers, classes, packages ou méthodes.
+texte. Il réunit les principes de conception (SOLID vérifié question par
+question, pas d'abstraction spéculative, patrons nommés seulement s'ils sont
+utilisés) et l'architecture cœur et vue passive. Pour le code backend s'y
+ajoutent un style TypeScript fonctionnel et l'idempotence des routes POST.
 
 Les messages et libellés du formulaire sont dans
 `tools/validate_tests/context/` (gabarits `{{clé}}` et `strings.json`) et sont
@@ -165,6 +250,83 @@ odeur de code, anti-patron), l'agent lance l'étape `confirm_custom_implementati
 avec la liste des problèmes. `proceed` : l'agent l'implémente telle quelle,
 sans la réévaluer. `cancelled` (y compris formulaire fermé) : l'agent relance
 `choose_implementation` avec les mêmes options.
+
+## Revue de code
+
+`review_back` et `review_front` renvoient les consignes de revue d'un
+changement. La section `skills` des règles oblige l'agent à les appeler avant
+de terminer une tâche qui touche le code backend, le code frontend ou les deux.
+L'agent présente ensuite le dossier de revue à l'opérateur avant toute
+correction.
+
+Les deux outils partagent un socle commun, puis ajoutent les critères de leur
+côté :
+
+| Partie | Skills |
+| ------ | ------ |
+| Socle commun | pr-review-guardrails (dossier de preuves, revue à froid, revue contradictoire, synthèse, remise à l'humain), les quatre lentilles de code-review sans la CLI Tessl, challenge-assumptions, qa-expert (gravités P0 à P4, OWASP), exploratory-testing |
+| `review_back` | api-idempotency (côté serveur), express-security-basics, prisma-best-practices, rls-policy-optimization, api-testing-first-steps, jest-testing |
+| `review_front` | headless-architecture (vue passive), api-idempotency (double envoi côté client) |
+
+Les règles de travail restent prioritaires : la couverture visée reste de
+100 %, et l'injection des dépendances passe avant `jest.mock`.
+
+Le paramètre optionnel `mode` ajoute un audit, que l'agent ne lance que si
+l'opérateur le demande :
+
+| `mode` | Ajout |
+| ------ | ----- |
+| `review` (par défaut) | Aucun |
+| `architecture_audit` | Audit d'architecture (software-architecture-audit) |
+| `test_audit` | Audit de la suite de tests (codebase-test-suite-audit) |
+
+Deux skills de la liste d'origine ne sont pas intégrés :
+review-model-performance évalue des skills Tessl et non du code applicatif,
+et alethia ne pilote qu'un navigateur web local, sans test E2E mobile.
+
+## Transcription
+
+`transcribe` s'appuie sur le skill
+[speech-to-text](https://tessl.io/registry/skills/github/calesthio/OpenMontage/speech-to-text).
+Un formulaire demande à l'opérateur le chemin d'un fichier mp3. Le fichier est
+ensuite envoyé à ElevenLabs Scribe v2 (`scribe_v2`), et l'outil renvoie le
+texte et la langue détectée. Si le formulaire n'aboutit pas, l'agent demande le
+chemin dans la conversation et le transmet par le paramètre `path`.
+
+Il faut une clé d'API ElevenLabs et monter le dossier du fichier dans le
+conteneur :
+
+```bash
+docker run -i --rm -v pokeledger-memory:/home/node/.pokeledger/keep-track -v "$PWD/audio:/home/node/audio" -e ELEVENLABS_API_KEY pokeledger-mcp
+```
+
+Le chemin à donner est alors celui vu par le conteneur, par exemple
+`/home/node/audio/reunion.mp3`.
+
+| `status` | Signification |
+| -------- | ------------- |
+| `transcribed` | Transcription renvoyée |
+| `not_provided`, `unavailable` | Pas de chemin par formulaire : le demander dans la conversation |
+| `invalid_file` | Fichier introuvable ou pas en mp3 |
+| `missing_key` | `ELEVENLABS_API_KEY` n'est pas définie |
+| `api_error` | Échec de l'API (401, 422, 429, autre code ou réseau) |
+
+## Passation
+
+`handoff` s'inspire du skill
+[session-handoff](https://tessl.io/registry/skills/github/softaworks/agent-toolkit/session-handoff).
+Il lit la mémoire de `keep_track` sans la modifier et renvoie un document
+Markdown destiné à l'agent qui reprendra le travail :
+
+- les métadonnées et le nombre d'entrées par niveau ;
+- le contexte important : les préférences de l'opérateur ;
+- les schémas clés : les corrections et réflexions passées au niveau `hot` ;
+- les connaissances du niveau `warm`, regroupées par `namespace` ;
+- les archives du niveau `cold` ;
+- les consignes de reprise.
+
+Les sections du modèle d'origine que la mémoire ne peut pas remplir (fichiers
+modifiés, processus actifs) sont omises.
 
 ## Développement local
 

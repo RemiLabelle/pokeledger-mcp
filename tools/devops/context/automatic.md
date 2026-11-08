@@ -1,0 +1,1 @@
+Le skill devops a été chargé automatiquement : l'agent DOIT afficher à l'opérateur ce simple message, puis DOIT appliquer ce skill : « Le skill devops guide le travail actuel. » Les mots-clés en majuscules s'interprètent selon le BCP 14 [RFC 2119] [RFC 8174].

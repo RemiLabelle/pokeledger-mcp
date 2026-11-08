@@ -6,7 +6,13 @@
     { "id": "versioning", "title": "Versionnage", "file": "versioning.md" },
     { "id": "git", "title": "Conventions Git", "file": "git-conventions.md" },
     { "id": "tdd", "title": "Workflow TDD", "file": "tdd.md" },
+    { "id": "governance", "title": "Gouvernance", "file": "governance.md" },
     { "id": "decisions", "title": "Décisions d'implémentation", "file": "decisions.md" },
+    { "id": "forms", "title": "Formulaires de l'opérateur", "file": "forms.md" },
+    { "id": "documentation", "title": "Documentation", "file": "documentation.md" },
+    { "id": "subagents", "title": "Développement par sous-agents", "file": "subagents.md" },
+    { "id": "skills", "title": "Skills", "file": "skills.md" },
+    { "id": "communication", "title": "Communication", "file": "communication.md" },
     { "id": "comments", "title": "Commentaires", "file": "comments.md" }
   ]
 }

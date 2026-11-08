@@ -1,3 +1,4 @@
+import { askOperatorForm } from "../operator_form/index.js";
 import { z } from "zod";
 import { loadTexts, renderTemplate } from "./texts.js";
 
@@ -51,7 +52,7 @@ export const validateTests = {
 
     let answer;
     try {
-      answer = await server.server.elicitInput({ message, requestedSchema: operatorForm(texts.strings) });
+      answer = await askOperatorForm(server, { message, requestedSchema: operatorForm(texts.strings) });
     } catch (error) {
       return reply(
         texts.unavailable,

@@ -1,0 +1,7 @@
+{
+  "empty": "La mémoire est vide : aucune leçon n'a encore été enregistrée.",
+  "summary": "La mémoire compte {{total}} entrée(s) dans {{namespaces}} espace(s).",
+  "none": "Aucune entrée.",
+  "entry": "- {{lesson}} ({{kind}}, source : {{context}}, vue {{count}} fois)",
+  "noContext": "non précisée"
+}

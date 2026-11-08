@@ -11,6 +11,8 @@ tools/<outil>/                un dossier par outil ou étape interne
 tools/start_workflow/
   index.js                    outil public et routage des étapes (`step`)
   context.js                  chargement des fichiers de contexte
+  auto-versioning.js          question à l'opérateur et réponse conservée pour la session
+  kawaii.js                   tirage unique de la session pour le style kawaii
   context/                    règles et textes destinés au modèle
   test/fixtures/              dossiers de contexte de test
 tools/validate_tests/,
@@ -22,9 +24,26 @@ tools/keep_track/
   index.js                    outil public et actions sur la mémoire
   memory-store.js             lecture, écriture et effacement de `memory.json`
   context/                    description de l'outil
+tools/operator_form/
+  index.js                    ouverture des formulaires, avec le délai de réponse de l'opérateur
 tools/neuralyze/
   index.js                    outil public d'effacement de la mémoire
   context/                    description et formulaire de confirmation
+tools/devops/
+  index.js                    outil public qui renvoie le skill ou une référence
+  context/                    consignes d'usage et description de l'outil
+  context/skill/              copie du skill externe et de ses références
+tools/review/
+  index.js                    outils publics review_back et review_front (table SIDES, table MODES)
+  context/common/             socle commun des deux revues
+  context/back/, context/front/  critères propres à chaque côté
+  context/audits/             audits ajoutés par le paramètre `mode`
+tools/transcribe/
+  index.js                    outil public de transcription d'un mp3 (ElevenLabs Scribe v2)
+  context/                    description, formulaire, messages d'échec
+tools/handoff/
+  index.js                    outil public de passation de la mémoire de keep_track
+  context/                    description, gabarit du document et libellés
 ```
 
 ## Du code à l'exposition publique
@@ -87,7 +106,7 @@ export const validateTests = {
 ```
 
 `run` construit le message à partir des gabarits, ouvre le formulaire de
-l'opérateur par élicitation MCP (`server.server.elicitInput`), puis traduit
+l'opérateur par élicitation MCP (`askOperatorForm`), puis traduit
 la réponse en résultat : un texte de consigne pour l'agent (`content`) et un
 état exploitable par programme (`structuredContent.status`). Les fonctions
 d'aide (`operatorForm`, `reply`, `bullets`) restent privées au module.
@@ -95,14 +114,18 @@ d'aide (`operatorForm`, `reply`, `bullets`) restent privées au module.
 ### 4. Outil public — `tools/start_workflow/index.js`
 
 `registerStartWorkflow` transforme les étapes internes en outil MCP.
-`registerPing`, `registerKeepTrack` et `registerNeuralyze` déclarent les autres
+`registerPing`, `registerKeepTrack`, `registerNeuralyze`, `registerHandoff`,
+`registerDevops`, `registerReview` et `registerTranscribe` déclarent les autres
 outils publics, sans étape interne :
 
 1. la table `STEPS` réunit les objets étape par leur `name` ;
 2. `registerTool("start_workflow", …)` déclare le schéma public : `sections`,
    `step` (énumération des noms de `STEPS`, dont la description concatène la
    documentation de chaque étape) et `input` ;
-3. à l'appel, sans `step`, l'outil renvoie les règles (`buildContext`) ; avec
+3. à l'appel, sans `step`, l'outil renvoie les règles (`buildContext`), avec les
+   textes du versionnage automatique (`createAutoVersioning`, un état par
+   serveur, textes dans `context/auto-versioning/`, non remplaçables par
+   `POKELEDGER_START_WORKFLOW_CONTEXT_DIR`) ; avec
    `step`, `runStep` valide `input` contre l'`inputSchema` de l'étape et
    renvoie une erreur lisible (`isError`) sans solliciter l'opérateur si
    l'entrée est invalide, sinon appelle `run`.
@@ -114,11 +137,33 @@ par `start_workflow`.
 
 - `createServer` crée le `McpServer` avec les instructions issues du contexte
   et enregistre uniquement les outils publics (`registerPing`,
-  `registerStartWorkflow`, `registerKeepTrack`, `registerNeuralyze`). C'est le
-  point d'entrée des tests, qui s'y connectent par `InMemoryTransport`.
+  `registerStartWorkflow`, `registerKeepTrack`, `registerNeuralyze`,
+  `registerHandoff`, `registerDevops`, `registerReview`, `registerTranscribe`).
+  C'est le point d'entrée des tests, qui s'y connectent par
+  `InMemoryTransport`. Ses frontières sont injectables : `random` (aléa),
+  `fetch` (réseau, pour l'API ElevenLabs) et `env` (variables
+  d'environnement).
 - `src/index.js` relie ce serveur au transport stdio ; l'image Docker lance
   ce fichier. Les clients MCP voient alors `ping`, `start_workflow`,
-  `keep_track` et `neuralyze`.
+  `keep_track`, `neuralyze`, `handoff`, `devops`, `review_back`,
+  `review_front` et `transcribe`.
+
+### Flux d'une transcription
+
+```mermaid
+sequenceDiagram
+  %% Outil transcribe : du formulaire à la transcription
+  participant Agent
+  participant Serveur as transcribe
+  participant Opérateur
+  participant API as ElevenLabs
+  Agent->>Serveur: transcribe({})
+  Serveur->>Opérateur: formulaire (chemin du mp3)
+  Opérateur-->>Serveur: /home/node/audio/reunion.mp3
+  Serveur->>API: POST /v1/speech-to-text (scribe_v2)
+  API-->>Serveur: text, language_code
+  Serveur-->>Agent: status transcribed + texte
+```
 
 ### Ajouter une étape interne
 

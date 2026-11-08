@@ -1,0 +1,10 @@
+{
+  "pathTitle": "Fichier mp3",
+  "pathDescription": "Chemin du fichier mp3 à transcrire, vu par le serveur.",
+  "causes": {
+    "401": "clé d'API invalide (HTTP 401)",
+    "422": "paramètres invalides (HTTP 422)",
+    "429": "limite de débit atteinte (HTTP 429), réessayer plus tard",
+    "default": "erreur de l'API (HTTP {{status}})"
+  }
+}
