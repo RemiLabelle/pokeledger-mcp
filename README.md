@@ -5,7 +5,7 @@ distribué sous forme d'image **Docker**.
 
 ## Outils
 
-Neuf outils sont publics :
+Onze outils sont publics :
 
 | Outil            | Description                                                                         |
 | ---------------- | ----------------------------------------------------------------------------------- |
@@ -18,6 +18,8 @@ Neuf outils sont publics :
 | `review_back`    | Renvoie les consignes de revue d'un changement backend.                             |
 | `review_front`   | Renvoie les consignes de revue d'un changement frontend.                            |
 | `transcribe`     | Transcrit un fichier mp3 choisi par l'opérateur, avec ElevenLabs.                   |
+| `export_memory`  | Exporte la mémoire de `keep_track` dans un paquet JSON versionné.                   |
+| `import_memory`  | Fusionne un paquet exporté dans la mémoire de `keep_track`.                         |
 
 Les étapes internes ne sont pas listées comme outils ; l'agent les lance par
 `start_workflow` avec `step` et `input` :
@@ -327,6 +329,51 @@ Markdown destiné à l'agent qui reprendra le travail :
 
 Les sections du modèle d'origine que la mémoire ne peut pas remplir (fichiers
 modifiés, processus actifs) sont omises.
+
+## Export et import de la mémoire
+
+`handoff` produit un document à lire, qui ne se recharge pas. Pour reprendre
+le travail dans une autre session, sur un autre poste ou avec un autre volume,
+l'opérateur exporte la mémoire puis l'importe :
+
+1. Dans la session d'origine, `export_memory` renvoie un paquet JSON à
+   conserver tel quel :
+
+   ```json
+   {
+     "format": "pokeledger-memory",
+     "version": 1,
+     "exportedAt": "2026-11-08T10:00:00.000Z",
+     "entries": [
+       {
+         "kind": "preference",
+         "lesson": "Répondre en français",
+         "context": "demande de l'opérateur",
+         "namespace": "global",
+         "tier": "hot",
+         "count": 1,
+         "recordedAt": "2026-11-08T09:12:44.120Z"
+       }
+     ]
+   }
+   ```
+
+2. Dans la nouvelle session, l'agent appelle `import_memory` avec ce texte dans
+   le paramètre `bundle`.
+
+L'import fusionne au lieu de remplacer. Une même leçon dans le même `namespace`
+(sans tenir compte de la casse ni des espaces autour) additionne ses
+répétitions et passe au niveau `hot` à la troisième. Les autres entrées sont
+ajoutées avec leurs champs d'origine, puis les limites de chaque niveau
+s'appliquent comme pour `keep_track`. Le résultat indique le nombre d'entrées
+ajoutées (`added`) et fusionnées (`merged`).
+
+Le paquet est entièrement validé avant toute écriture : un texte qui n'est pas
+du JSON, un autre `format`, une autre `version` ou une entrée incomplète est
+refusé sans modifier la mémoire.
+
+Le paquet peut contenir les préférences de l'opérateur : il se conserve comme
+un fichier personnel et ne se publie pas.
 
 ## Développement local
 

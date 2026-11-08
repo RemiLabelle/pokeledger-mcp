@@ -23,6 +23,7 @@ tools/confirm_custom_implementation/
 tools/keep_track/
   index.js                    outil public et actions sur la mémoire
   memory-store.js             lecture, écriture et effacement de `memory.json`
+  memory-rules.js             répétitions, promotion et limites, partagées avec import_memory
   context/                    description de l'outil
 tools/operator_form/
   index.js                    ouverture des formulaires, avec le délai de réponse de l'opérateur
@@ -44,6 +45,9 @@ tools/transcribe/
 tools/handoff/
   index.js                    outil public de passation de la mémoire de keep_track
   context/                    description, gabarit du document et libellés
+tools/memory_transfer/
+  index.js                    outils publics export_memory et import_memory (paquet JSON versionné)
+  context/                    descriptions des deux outils
 ```
 
 ## Du code à l'exposition publique
@@ -115,7 +119,8 @@ d'aide (`operatorForm`, `reply`, `bullets`) restent privées au module.
 
 `registerStartWorkflow` transforme les étapes internes en outil MCP.
 `registerPing`, `registerKeepTrack`, `registerNeuralyze`, `registerHandoff`,
-`registerDevops`, `registerReview` et `registerTranscribe` déclarent les autres
+`registerMemoryTransfer`, `registerDevops`, `registerReview` et
+`registerTranscribe` déclarent les autres
 outils publics, sans étape interne :
 
 1. la table `STEPS` réunit les objets étape par leur `name` ;
@@ -138,15 +143,16 @@ par `start_workflow`.
 - `createServer` crée le `McpServer` avec les instructions issues du contexte
   et enregistre uniquement les outils publics (`registerPing`,
   `registerStartWorkflow`, `registerKeepTrack`, `registerNeuralyze`,
-  `registerHandoff`, `registerDevops`, `registerReview`, `registerTranscribe`).
+  `registerHandoff`, `registerMemoryTransfer`, `registerDevops`,
+  `registerReview`, `registerTranscribe`).
   C'est le point d'entrée des tests, qui s'y connectent par
   `InMemoryTransport`. Ses frontières sont injectables : `random` (aléa),
   `fetch` (réseau, pour l'API ElevenLabs) et `env` (variables
   d'environnement).
 - `src/index.js` relie ce serveur au transport stdio ; l'image Docker lance
   ce fichier. Les clients MCP voient alors `ping`, `start_workflow`,
-  `keep_track`, `neuralyze`, `handoff`, `devops`, `review_back`,
-  `review_front` et `transcribe`.
+  `keep_track`, `neuralyze`, `handoff`, `export_memory`, `import_memory`,
+  `devops`, `review_back`, `review_front` et `transcribe`.
 
 ### Flux d'une transcription
 
