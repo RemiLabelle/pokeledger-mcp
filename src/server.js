@@ -1,14 +1,23 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { registerPing } from "../tools/ping/index.js";
 import { registerDevops } from "../tools/devops/index.js";
+import { registerReview } from "../tools/review/index.js";
 import { registerKeepTrack } from "../tools/keep_track/index.js";
 import { resolveMemoryDir } from "../tools/keep_track/memory-store.js";
 import { registerNeuralyze } from "../tools/neuralyze/index.js";
 import { registerStartWorkflow } from "../tools/start_workflow/index.js";
 import { loadServerTexts, resolveContextDir } from "../tools/start_workflow/context.js";
+import { registerTranscribe } from "../tools/transcribe/index.js";
+import { registerHandoff } from "../tools/handoff/index.js";
 
-// Crée le serveur MCP et déclare ses seuls outils publics ; contextDir pointe vers les fichiers de règles, memoryDir vers la mémoire de keep_track et random vers la source d'aléa.
-export function createServer({ contextDir = resolveContextDir(), memoryDir = resolveMemoryDir(), random = Math.random } = {}) {
+// Crée le serveur MCP et déclare ses seuls outils publics ; contextDir pointe vers les fichiers de règles, memoryDir vers la mémoire de keep_track, random vers la source d'aléa, fetch et env vers le réseau et l'environnement.
+export function createServer({
+  contextDir = resolveContextDir(),
+  memoryDir = resolveMemoryDir(),
+  random = Math.random,
+  fetch = globalThis.fetch,
+  env = process.env,
+} = {}) {
   const { instructions } = loadServerTexts(contextDir);
   const server = new McpServer({ name: "pokeledger-mcp", version: "0.1.0" }, { instructions });
 
@@ -16,7 +25,10 @@ export function createServer({ contextDir = resolveContextDir(), memoryDir = res
   registerStartWorkflow(server, contextDir, random);
   registerKeepTrack(server, memoryDir);
   registerNeuralyze(server, memoryDir);
+  registerHandoff(server, memoryDir);
   registerDevops(server);
+  registerReview(server);
+  registerTranscribe(server, { fetch, env });
 
   return server;
 }
