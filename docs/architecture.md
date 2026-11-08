@@ -33,6 +33,17 @@ tools/devops/
   index.js                    outil public qui renvoie le skill ou une référence
   context/                    consignes d'usage et description de l'outil
   context/skill/              copie du skill externe et de ses références
+tools/review/
+  index.js                    outils publics review_back et review_front (table SIDES, table MODES)
+  context/common/             socle commun des deux revues
+  context/back/, context/front/  critères propres à chaque côté
+  context/audits/             audits ajoutés par le paramètre `mode`
+tools/transcribe/
+  index.js                    outil public de transcription d'un mp3 (ElevenLabs Scribe v2)
+  context/                    description, formulaire, messages d'échec
+tools/handoff/
+  index.js                    outil public de passation de la mémoire de keep_track
+  context/                    description, gabarit du document et libellés
 ```
 
 ## Du code à l'exposition publique
@@ -103,8 +114,9 @@ d'aide (`operatorForm`, `reply`, `bullets`) restent privées au module.
 ### 4. Outil public — `tools/start_workflow/index.js`
 
 `registerStartWorkflow` transforme les étapes internes en outil MCP.
-`registerPing`, `registerKeepTrack`, `registerNeuralyze` et `registerDevops`
-déclarent les autres outils publics, sans étape interne :
+`registerPing`, `registerKeepTrack`, `registerNeuralyze`, `registerHandoff`,
+`registerDevops`, `registerReview` et `registerTranscribe` déclarent les autres
+outils publics, sans étape interne :
 
 1. la table `STEPS` réunit les objets étape par leur `name` ;
 2. `registerTool("start_workflow", …)` déclare le schéma public : `sections`,
@@ -126,11 +138,32 @@ par `start_workflow`.
 - `createServer` crée le `McpServer` avec les instructions issues du contexte
   et enregistre uniquement les outils publics (`registerPing`,
   `registerStartWorkflow`, `registerKeepTrack`, `registerNeuralyze`,
-  `registerDevops`). C'est le point d'entrée des tests, qui s'y connectent par
-  `InMemoryTransport`.
+  `registerHandoff`, `registerDevops`, `registerReview`, `registerTranscribe`).
+  C'est le point d'entrée des tests, qui s'y connectent par
+  `InMemoryTransport`. Ses frontières sont injectables : `random` (aléa),
+  `fetch` (réseau, pour l'API ElevenLabs) et `env` (variables
+  d'environnement).
 - `src/index.js` relie ce serveur au transport stdio ; l'image Docker lance
   ce fichier. Les clients MCP voient alors `ping`, `start_workflow`,
-  `keep_track`, `neuralyze` et `devops`.
+  `keep_track`, `neuralyze`, `handoff`, `devops`, `review_back`,
+  `review_front` et `transcribe`.
+
+### Flux d'une transcription
+
+```mermaid
+sequenceDiagram
+  %% Outil transcribe : du formulaire à la transcription
+  participant Agent
+  participant Serveur as transcribe
+  participant Opérateur
+  participant API as ElevenLabs
+  Agent->>Serveur: transcribe({})
+  Serveur->>Opérateur: formulaire (chemin du mp3)
+  Opérateur-->>Serveur: /home/node/audio/reunion.mp3
+  Serveur->>API: POST /v1/speech-to-text (scribe_v2)
+  API-->>Serveur: text, language_code
+  Serveur-->>Agent: status transcribed + texte
+```
 
 ### Ajouter une étape interne
 
