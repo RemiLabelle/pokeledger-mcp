@@ -12,7 +12,9 @@
    adapté au problème et le mieux aligné sur le code existant (conventions,
    modules, idiomes). Chaque option DOIT inclure une courte justification et
    un court extrait de code montrant son intégration dans le code. L'option
-   recommandée DEVRAIT être proposée en premier.
+   recommandée DEVRAIT être proposée en premier ; lorsqu'il existe, le plus
+   petit changement sûr issu du contrôle de gouvernance DOIT être proposé en
+   premier.
 4. **Attente du choix.** L'agent NE DOIT PAS implémenter cette pièce avant
    d'avoir reçu le choix de l'opérateur.
 5. **Implémentation personnalisée.** Si l'opérateur décrit sa propre
