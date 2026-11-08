@@ -9,6 +9,7 @@ import { registerStartWorkflow } from "../tools/start_workflow/index.js";
 import { loadServerTexts, resolveContextDir } from "../tools/start_workflow/context.js";
 import { registerTranscribe } from "../tools/transcribe/index.js";
 import { registerHandoff } from "../tools/handoff/index.js";
+import { registerMemoryTransfer } from "../tools/memory_transfer/index.js";
 
 // Crée le serveur MCP et déclare ses seuls outils publics ; contextDir pointe vers les fichiers de règles, memoryDir vers la mémoire de keep_track, random vers la source d'aléa, fetch et env vers le réseau et l'environnement.
 export function createServer({
@@ -26,6 +27,7 @@ export function createServer({
   registerKeepTrack(server, memoryDir);
   registerNeuralyze(server, memoryDir);
   registerHandoff(server, memoryDir);
+  registerMemoryTransfer(server, memoryDir);
   registerDevops(server);
   registerReview(server);
   registerTranscribe(server, { fetch, env });
