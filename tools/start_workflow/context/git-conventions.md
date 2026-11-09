@@ -16,10 +16,12 @@ Format :
 
 ```text
 <type>/<description>
-<type>/<issue>-<description>
+<type>/P2A26E2-<n>-<description>
 ```
 
-La description est courte, explicite, en anglais et en `kebab-case`.
+La description est courte, explicite, en anglais et en `kebab-case`. Si une
+issue Jira existe, sa clé `P2A26E2-<n>` (où `<n>` est le numéro de l'issue)
+précède la description : `fix/P2A26E2-13-handle-timeout`.
 
 | Type        | Usage                        | Part de   | Fusionne dans           |
 | ----------- | ---------------------------- | --------- | ----------------------- |
@@ -46,15 +48,16 @@ Format :
 <type>(<scope-optionnel>): <description>
 ```
 
-La description est courte, impérative, en anglais. Si une issue existe, son
-numéro est placé au début de la description : `fix(api): #13 handle timeout`.
+La description est courte, impérative, en anglais. Si une issue Jira existe,
+sa clé `P2A26E2-<n>` est placée au début de la description :
+`fix(api): P2A26E2-13 handle timeout`.
 
 Types autorisés : `feat`, `fix`, `docs`, `refactor`, `test`, `chore`.
 
 Pour un changement cassant, utiliser `feat!` :
 
 ```text
-feat!(api): #42 change response format
+feat!(api): P2A26E2-42 change response format
 ```
 
 ## Hotfixes

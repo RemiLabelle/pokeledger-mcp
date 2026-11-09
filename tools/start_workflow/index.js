@@ -52,20 +52,28 @@ export function registerStartWorkflow(server, contextDir, random) {
           .boolean()
           .optional()
           .describe("Answer given by the operator in the conversation about automatic versioning, only after the rules asked for it"),
+        branch: z
+          .string()
+          .optional()
+          .describe("Active Git branch of the project (output of `git branch --show-current`), used to propose the Jira issue number"),
+        issueNumber: z
+          .union([z.int().positive(), z.literal("none")])
+          .optional()
+          .describe('Jira issue number (P2A26E2-<n>) given by the operator in the conversation, or "none", only after the rules asked for it'),
         step: z.enum([...STEPS.keys()]).optional().describe(describeSteps()),
         input: z.record(z.string(), z.unknown()).optional().describe("Input of the step, as documented in `step`"),
       },
       annotations: { readOnlyHint: true, openWorldHint: false },
     },
     // Exécute l'étape demandée, sinon relit les fichiers de contexte pour que les modifications s'appliquent sans redémarrage.
-    async ({ sections, autoVersioning, step, input }) => {
+    async ({ sections, autoVersioning, branch, issueNumber, step, input }) => {
       const styleTexts = kawaiiTexts();
       if (step) {
         return runStep(server, step, input);
       }
       try {
         const rules = buildContext(contextDir, sections);
-        const texts = await applyAutoVersioning(rules, autoVersioning);
+        const texts = await applyAutoVersioning(rules, { autoVersioning, branch, issueNumber });
         return { content: [...texts, ...styleTexts].map((text) => ({ type: "text", text })) };
       } catch (error) {
         return toolError(error.message);

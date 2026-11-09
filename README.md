@@ -102,6 +102,22 @@ Après une réponse dans la conversation, l'agent la transmet par le paramètre
 `autoVersioning` (`true` ou `false`), qui ne remplace jamais une réponse déjà
 conservée. Pour changer d'avis, il faut démarrer une nouvelle session.
 
+### Issue Jira
+
+Après un « Oui » au versionnage automatique, `start_workflow` demande à
+l'opérateur le numéro de l'issue Jira liée au travail : un numéro (`13` ou
+`P2A26E2-13`) ou « aucune ». Si l'agent transmet la branche active par le
+paramètre `branch` et qu'elle contient une clé `P2A26E2-<n>`, ce numéro est
+proposé par défaut. Une saisie invalide rouvre le formulaire, jusqu'à trois fois.
+
+Sans réponse valide (refus, annulation, client sans formulaire), l'outil ne
+renvoie **pas** les règles : il renvoie une erreur qui demande à l'agent de
+recueillir le numéro dans la conversation, puis de le transmettre par le
+paramètre `issueNumber` (un entier positif ou `"none"`). Le numéro retenu est
+conservé pour la session et ajoute aux règles la consigne d'utiliser la clé
+dans le nom de la branche et au début de chaque commit. Ces textes sont dans
+`context/issue-number/`.
+
 ### Style kawaii
 
 Au premier appel de `start_workflow` d'une session, le serveur effectue un seul

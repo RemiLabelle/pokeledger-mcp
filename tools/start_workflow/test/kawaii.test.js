@@ -1,6 +1,7 @@
 import { test, afterEach } from "node:test";
 import assert from "node:assert/strict";
 import path from "node:path";
+import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
@@ -9,6 +10,8 @@ import { createServer } from "../../../src/server.js";
 const here = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURE = path.join(here, "fixtures", "context-full");
 const RULES = "# Alpha\n\nAlpha rule.\n\n---\n\n# Beta\n\nBeta rule.";
+const NO_ISSUE = readFileSync(path.join(here, "..", "context", "issue-number", "none.md"), "utf8").trim();
+const BASE = [{ type: "text", text: RULES }, { type: "text", text: NO_ISSUE }];
 
 let client;
 
@@ -20,9 +23,9 @@ async function connect(random) {
   await Promise.all([server.connect(serverTransport), client.connect(clientTransport)]);
 }
 
-// Charge les règles en donnant déjà la réponse sur le versionnage automatique, pour isoler le tirage.
+// Charge les règles en donnant déjà les réponses sur le versionnage automatique et l'issue, pour isoler le tirage.
 async function load() {
-  return client.callTool({ name: "start_workflow", arguments: { autoVersioning: true } });
+  return client.callTool({ name: "start_workflow", arguments: { autoVersioning: true, issueNumber: "none" } });
 }
 
 afterEach(async () => {
@@ -33,9 +36,9 @@ afterEach(async () => {
 test("a roll just under 1/1000 returns the rules followed by the kawaii style instruction", async () => {
   await connect(() => 0.0009);
   const result = await load();
-  assert.equal(result.content.length, 2);
-  assert.deepEqual(result.content[0], { type: "text", text: RULES });
-  const style = result.content[1].text.replace(/\s+/g, " ");
+  assert.equal(result.content.length, 3);
+  assert.deepEqual(result.content.slice(0, 2), BASE);
+  const style = result.content[2].text.replace(/\s+/g, " ");
   assert.match(style, /chaque message/);
   assert.match(style, /kawaii/);
   assert.match(style, /dès que l'opérateur mentionne/i);
@@ -47,7 +50,7 @@ test("a roll just under 1/1000 returns the rules followed by the kawaii style in
 test("a roll of exactly 1/1000 returns only the rules", async () => {
   await connect(() => 0.001);
   const result = await load();
-  assert.deepEqual(result.content, [{ type: "text", text: RULES }]);
+  assert.deepEqual(result.content, BASE);
 });
 
 // Crée une source d'aléa qui renvoie les valeurs données dans l'ordre et compte ses appels.
@@ -66,8 +69,8 @@ test("a hit keeps the style instruction on later rule loads without rolling agai
   await load();
   const second = await load();
   assert.equal(random.calls, 1);
-  assert.equal(second.content.length, 2);
-  assert.match(second.content[1].text, /kawaii/);
+  assert.equal(second.content.length, 3);
+  assert.match(second.content[2].text, /kawaii/);
 });
 
 test("a miss stays a miss on later rule loads without rolling again", async () => {
@@ -76,7 +79,7 @@ test("a miss stays a miss on later rule loads without rolling again", async () =
   await load();
   const second = await load();
   assert.equal(random.calls, 1);
-  assert.deepEqual(second.content, [{ type: "text", text: RULES }]);
+  assert.deepEqual(second.content, BASE);
 });
 
 test("a step as the first call uses the session's only roll without showing the instruction", async () => {
@@ -89,7 +92,7 @@ test("a step as the first call uses the session's only roll without showing the 
   assert.equal(step.isError, true);
   assert.equal(step.content.length, 1);
   assert.doesNotMatch(step.content[0].text, /kawaii/);
-  assert.equal(rules.content.length, 2);
+  assert.equal(rules.content.length, 3);
 });
 
 test("a new server rolls again", async () => {
@@ -98,5 +101,5 @@ test("a new server rolls again", async () => {
   await client.close();
   await connect(() => 0.0009);
   const result = await load();
-  assert.equal(result.content.length, 2);
+  assert.equal(result.content.length, 3);
 });

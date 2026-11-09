@@ -1,0 +1,5 @@
+{
+  "issueTitle": "Numéro d'issue Jira",
+  "issueDescription": "Numéro de l'issue (par exemple 13 ou P2A26E2-13), ou « aucune » s'il n'y a pas d'issue",
+  "proposal": "Numéro proposé d'après la branche active `{branch}` : P2A26E2-{number}."
+}

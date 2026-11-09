@@ -14,15 +14,17 @@ const RULES = "# Alpha\n\nAlpha rule.\n\n---\n\n# Beta\n\nBeta rule.";
 let client;
 let questions;
 
-// Connecte un client de test dont l'opérateur simulé répond toujours par reply ; les questions reçues sont conservées.
-async function connect(reply) {
+const ISSUE_13 = { action: "accept", content: { issue: "13" } };
+
+// Connecte un client de test dont l'opérateur simulé donne les réponses dans l'ordre, la dernière se répétant ; les questions reçues sont conservées.
+async function connect(...replies) {
   const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
   const server = createServer({ contextDir: FIXTURE, random: () => 1 });
   questions = [];
   client = new Client({ name: "test-client", version: "0.0.0" }, { capabilities: { elicitation: { form: {} } } });
   client.setRequestHandler(ElicitRequestSchema, async (request) => {
     questions.push(request.params);
-    return reply;
+    return replies.length > 1 ? replies.shift() : replies[0];
   });
   await Promise.all([server.connect(serverTransport), client.connect(clientTransport)]);
 }
@@ -37,13 +39,15 @@ afterEach(async () => {
   client = undefined;
 });
 
-test("loading the rules asks the operator a yes or no question and a yes returns the rules unchanged", async () => {
-  await connect({ action: "accept", content: { autoVersioning: "yes" } });
+test("loading the rules asks the operator a yes or no question and a yes returns the rules followed by the issue rule", async () => {
+  await connect({ action: "accept", content: { autoVersioning: "yes" } }, ISSUE_13);
   const result = await load();
-  assert.equal(questions.length, 1);
+  assert.equal(questions.length, 2);
   assert.match(questions[0].message, /versionner automatiquement/);
   assert.deepEqual(questions[0].requestedSchema.properties.autoVersioning.enum, ["yes", "no"]);
-  assert.deepEqual(result.content, [{ type: "text", text: RULES }]);
+  assert.equal(result.content.length, 2);
+  assert.deepEqual(result.content[0], { type: "text", text: RULES });
+  assert.match(result.content[1].text, /P2A26E2-13/);
 });
 
 test("a no answer returns a major warning before the unchanged rules", async () => {
@@ -57,12 +61,13 @@ test("a no answer returns a major warning before the unchanged rules", async () 
   assert.deepEqual(result.content[1], { type: "text", text: RULES });
 });
 
-for (const [answer, blocks] of [["yes", 1], ["no", 2]]) {
+for (const [answer, asked] of [["yes", 2], ["no", 1]]) {
   test(`a ${answer} answer is kept for the session without asking again`, async () => {
-    await connect({ action: "accept", content: { autoVersioning: answer } });
+    await connect({ action: "accept", content: { autoVersioning: answer } }, ISSUE_13);
     await load();
     const second = await load();
-    assert.equal(questions.length, 1);
+    assert.equal(questions.length, asked);
+    const blocks = 2;
     assert.equal(second.content.length, blocks);
   });
 }
@@ -71,9 +76,9 @@ test("each server starts a new session that asks again", async () => {
   await connect({ action: "accept", content: { autoVersioning: "no" } });
   await load();
   await client.close();
-  await connect({ action: "accept", content: { autoVersioning: "yes" } });
+  await connect({ action: "accept", content: { autoVersioning: "yes" } }, ISSUE_13);
   await load();
-  assert.equal(questions.length, 1);
+  assert.equal(questions.length, 2);
 });
 
 test("a workflow step does not ask the operator about auto versioning", async () => {
@@ -140,11 +145,11 @@ test("autoVersioning false records a no without opening the form", async () => {
 
 test("autoVersioning true records a yes without opening the form", async () => {
   await connect({ action: "decline" });
-  const first = await load({ autoVersioning: true });
+  const first = await load({ autoVersioning: true, issueNumber: 7 });
   const second = await load();
   assert.equal(questions.length, 0);
-  assert.deepEqual(first.content, [{ type: "text", text: RULES }]);
-  assert.deepEqual(second.content, [{ type: "text", text: RULES }]);
+  assert.deepEqual(first.content[0], { type: "text", text: RULES });
+  assert.deepEqual(second.content, first.content);
 });
 
 test("autoVersioning does not override a no already given in the form", async () => {
